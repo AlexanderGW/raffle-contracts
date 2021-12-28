@@ -16,7 +16,8 @@ contract LottoGame is AccessControl {
   uint nonce;
 
   // Number of completed games
-  uint public gameComplete;
+  uint public gameCount;
+
   uint public gamePlayerCount;
   uint public gameMaxPlayers;
   uint public gameMaxTicketsPlayer;
@@ -175,16 +176,16 @@ contract LottoGame is AccessControl {
     gameToken.transfer(_gameLastWinner, gameToken.balanceOf(address(this)));
 
     _resetGame();
-	gameLastWinner = _gameLastWinner;
-    gameComplete++;
+    gameLastWinner = _gameLastWinner;
+    gameCount++;
   }
 
   // function getPlayers() public view returns (address[] memory) {
   //   return gameTickets;
   // }
 
-  function getGameCompleteCount() public view returns(uint) {
-    return gameComplete;
+  function getGameCount() public view returns(uint) {
+    return gameCount;
   }
 
   function getGamePlayerCount() public view returns(uint) {
