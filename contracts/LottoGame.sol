@@ -8,24 +8,22 @@ import './Oracle.sol';
 
 contract LottoGame is AccessControl {
 
-	// Game states
+	// Is game running?
 	bool public gameState;
+
+	uint nonce;
 	uint public gameComplete;
+	uint public gamePlayerCount;
 	uint public gameMaxPlayers;
 	uint public gameMaxTicketsPlayer;
 	uint public gameTicketPrice;
-	// uint[] public gameTickets;
 
 	address public gameLastWinner;
-
 	address public gameTokenAddress;
-	// address[] public gamePlayers;
-
-
-	uint[] public gamePlayers;
 	address[] public gameTickets;
-	// mapping(uint => address) public gameTickets;
-	// mapping(address => uint) public gamePlayers;
+	address[] public gamePlayersIndex;
+	
+	mapping(address => uint) public gamePlayers;
 
 	ERC20 gameToken;
     
@@ -34,8 +32,6 @@ contract LottoGame is AccessControl {
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
 
 	Oracle oracle;
-	
-	uint nonce;
 
 	constructor(address _oracleAddress) public {
 		oracle = Oracle(_oracleAddress);
@@ -58,9 +54,20 @@ contract LottoGame is AccessControl {
     }
 
 	function resetGame() public onlyRole(CALLER_ROLE) returns(bool sufficient) {
-		gameTickets = new address[](0);
-		gamePlayers = new uint[](0);
+		_resetGame();
 		return true;
+	}
+
+	function _resetGame() private {
+		gameTickets = new address[](0);
+		uint _gamePlayerCount = gamePlayerCount;
+		address[] memory _gamePlayersIndex = gamePlayersIndex;
+		address j;
+		for (uint i = 0; i < _gamePlayerCount; i++) {
+			j = _gamePlayersIndex[i];
+			delete gamePlayers[j];
+		}
+		gamePlayersIndex = new address[](0);
 	}
 
 	function startGame(
@@ -75,6 +82,7 @@ contract LottoGame is AccessControl {
         );
 		
 		gameState = true;
+		gamePlayerCount = 0;
 
 		gameTokenAddress = _token;
 		gameToken = ERC20(gameTokenAddress);
@@ -86,40 +94,63 @@ contract LottoGame is AccessControl {
 		return true;
 	}
 
-	function buyTicket(uint _numberOfTickets) public returns (bool) {
+	function buyTicket(uint _numberOfTickets) public {
 		require(
             gameState == true,
-            "Game has not started"
-        );
-        require(
-            gameToken.allowance(msg.sender, address(this)) >= (gameTicketPrice * _numberOfTickets),
-            "Insufficent game token allowance"
-        );
-        require(
-            gameTickets.length <= gameMaxPlayers,
-            "Too many players in this game"
+            "Game not started"
         );
         require(
             _numberOfTickets > 0,
-            "Number of tickets must be at least 1"
+            "Buy at least 1 ticket"
         );
-		// uint256 gamePlayersIndex = uint256(uint160(address(msg.sender)));
-		// uint playerTicketCount = uint(gamePlayers[gamePlayersIndex] + _numberOfTickets);
-        // require(
-        //     playerTicketCount <= gameMaxTicketsPlayer,
-        //     "You have already bought the maximum number of tickets"
-        // );
 
-		_safeTransferFrom(gameToken, msg.sender, address(this), (gameTicketPrice * _numberOfTickets));
+		uint totalPrice = uint(gameTicketPrice * _numberOfTickets);
+        require(
+            gameToken.allowance(msg.sender, address(this)) >= totalPrice,
+            "Insufficent game token allowance"
+        );
 
-		// gamePlayers[gamePlayersIndex] = playerTicketCount;
+		bool isNewPlayer = false;
+		uint _playerTicketCount = gamePlayers[msg.sender];
+
+		// First time player has entered the game
+		if (_playerTicketCount == 0) {
+			if (gamePlayerCount == gameMaxPlayers) {
+				revert("Too many players in game");
+			}
+			isNewPlayer = true;
+		}
+		
+		// Check the new player ticket count
+		uint _playerTicketNextCount = _playerTicketCount + _numberOfTickets;
+        require(
+            _playerTicketNextCount <= gameMaxTicketsPlayer,
+            "Exceeds max player tickets, try lower value"
+        );
+
+		// If a new player (currently has no tickets)
+		if (isNewPlayer) {
+			
+			// Increase game total player count
+			gamePlayerCount++;
+
+			// Used for iteration on game player mapping, when resetting game
+			gamePlayersIndex.push(msg.sender);
+		}
+
+		// Transfer `totalPrice` of `gameToken` from player, this this contract
+		_safeTransferFrom(gameToken, msg.sender, address(this), totalPrice);
+
+		// Update number of tickets purchased by player
+		gamePlayers[msg.sender] = _playerTicketNextCount;
+
 		uint i;
 		while (i != _numberOfTickets) {
 			gameTickets.push(msg.sender);
 			i++;
 		}
 
-		return true;
+		// return true;
 		// return gamePlayers[gamePlayersIndex];
 		// return ++gamePlayers[msg.sender];
 	}
@@ -130,19 +161,19 @@ contract LottoGame is AccessControl {
             "Game already ended"
         );
         require(
-            gameTickets.length > 2,
+            gameTickets.length > 1,
             "Need at least two players in game"
         );
 
 		gameState = false;
 
-		uint rand = _randModulus(100);
-		uint index = rand % gameTickets.length;
-		gameLastWinner = gameTickets[index];
+		uint _rand = _randModulus(100);
+		uint _index = _rand % gameTickets.length;
+		gameLastWinner = gameTickets[_index];
 
 		gameToken.transfer(gameLastWinner, gameToken.balanceOf(address(this)));
 
-		resetGame();
+		_resetGame();
 		gameComplete++;
 
 		return gameLastWinner;
@@ -157,7 +188,7 @@ contract LottoGame is AccessControl {
 	// }
 
 	function getGamePlayerCount() public returns(uint) {
-		return uint(gamePlayers.length);
+		return gamePlayerCount;
 	}
 
 	function getGameToken() public returns(address) {
