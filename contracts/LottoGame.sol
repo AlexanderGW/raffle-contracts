@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/access/AccessControl.sol';
@@ -11,7 +12,10 @@ contract LottoGame is AccessControl {
 	// Is game running?
 	bool public gameState;
 
+	// Increments with each `_randModulus()` call, for randomness 
 	uint nonce;
+
+	// Number of completed games
 	uint public gameComplete;
 	uint public gamePlayerCount;
 	uint public gameMaxPlayers;
@@ -25,15 +29,19 @@ contract LottoGame is AccessControl {
 	
 	mapping(address => uint) public gamePlayers;
 
+	// The game token that players will play for.
 	ERC20 gameToken;
     
+	// Randomness oracle, for selecting a winner on `endGame()`
+	Oracle oracle;
+
     // Roles
     bytes32 public constant CALLER_ROLE = keccak256("CALLER_ROLE");
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
 
-	Oracle oracle;
+	constructor(address _oracleAddress) {
 
-	constructor(address _oracleAddress) public {
+		// Random oracle
 		oracle = Oracle(_oracleAddress);
 
 		// Grant the contract deployer the default admin role: it will be able
@@ -53,9 +61,8 @@ contract LottoGame is AccessControl {
         require(sent, "Token transfer failed");
     }
 
-	function resetGame() public onlyRole(CALLER_ROLE) returns(bool sufficient) {
+	function resetGame() public onlyRole(CALLER_ROLE) {
 		_resetGame();
-		return true;
 	}
 
 	function _resetGame() private {
@@ -75,7 +82,7 @@ contract LottoGame is AccessControl {
 		uint _ticketPrice,
 		uint _maxPlayers,
 		uint _maxTicketsPlayer
-	) public onlyRole(CALLER_ROLE) returns (bool) {
+	) public onlyRole(CALLER_ROLE) {
 		require(
             gameState == false,
             "Game already started"
@@ -90,8 +97,6 @@ contract LottoGame is AccessControl {
         gameMaxPlayers = _maxPlayers;
 		gameTicketPrice = _ticketPrice;
 		gameMaxTicketsPlayer = _maxTicketsPlayer;
-
-		return true;
 	}
 
 	function buyTicket(uint _numberOfTickets) public {
@@ -128,6 +133,9 @@ contract LottoGame is AccessControl {
             "Exceeds max player tickets, try lower value"
         );
 
+		// Transfer `totalPrice` of `gameToken` from player, this this contract
+		_safeTransferFrom(gameToken, msg.sender, address(this), totalPrice);
+
 		// If a new player (currently has no tickets)
 		if (isNewPlayer) {
 			
@@ -137,10 +145,7 @@ contract LottoGame is AccessControl {
 			// Used for iteration on game player mapping, when resetting game
 			gamePlayersIndex.push(msg.sender);
 		}
-
-		// Transfer `totalPrice` of `gameToken` from player, this this contract
-		_safeTransferFrom(gameToken, msg.sender, address(this), totalPrice);
-
+		
 		// Update number of tickets purchased by player
 		gamePlayers[msg.sender] = _playerTicketNextCount;
 
@@ -149,13 +154,9 @@ contract LottoGame is AccessControl {
 			gameTickets.push(msg.sender);
 			i++;
 		}
-
-		// return true;
-		// return gamePlayers[gamePlayersIndex];
-		// return ++gamePlayers[msg.sender];
 	}
 
-	function endGame() public onlyRole(CALLER_ROLE) returns (address) {
+	function endGame() public onlyRole(CALLER_ROLE) {
 		require(
             gameState == true,
             "Game already ended"
@@ -175,23 +176,21 @@ contract LottoGame is AccessControl {
 
 		_resetGame();
 		gameComplete++;
-
-		return gameLastWinner;
 	}
 
-	// function getPlayers() public view returns (address[]) {
+	// function getPlayers() public view returns (address[] memory) {
 	// 	return gameTickets;
 	// }
 
-	// function getGameCompleteCount() public returns(uint) {
-	// 	return uint(gameComplete);
-	// }
+	function getGameCompleteCount() public view returns(uint) {
+		return gameComplete;
+	}
 
-	function getGamePlayerCount() public returns(uint) {
+	function getGamePlayerCount() public view returns(uint) {
 		return gamePlayerCount;
 	}
 
-	function getGameToken() public returns(address) {
+	function getGameToken() public view returns(address) {
 		return gameTokenAddress;
 	}
 
@@ -201,27 +200,27 @@ contract LottoGame is AccessControl {
 		return true;
 	}
 
-	// function getTicketPrice() public returns(uint) {
-	// 	return gameTicketPrice;
-	// }
+	function getTicketPrice() public view returns(uint) {
+		return gameTicketPrice;
+	}
 
 	function setTicketPrice(uint _price) public onlyRole(MANAGER_ROLE) returns(bool sufficient) {
 		gameTicketPrice = _price;
 		return true;
 	}
 
-	// function getMaxPlayers() public returns(uint) {
-	// 	return gameMaxPlayers;
-	// }
+	function getMaxPlayers() public view returns(uint) {
+		return gameMaxPlayers;
+	}
 
 	function setMaxPlayers(uint _max) public onlyRole(MANAGER_ROLE) returns(bool sufficient) {
 		gameMaxPlayers = _max;
 		return true;
 	}
 
-	// function getMaxTickets() public returns(uint) {
-	// 	return gameMaxTicketsPlayer;
-	// }
+	function getMaxTicketsPerPlayer() public view returns(uint) {
+		return gameMaxTicketsPlayer;
+	}
 
 	function setMaxTickets(uint _max) public onlyRole(MANAGER_ROLE) returns(bool sufficient) {
 		gameMaxTicketsPlayer = _max;
