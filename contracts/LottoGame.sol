@@ -224,7 +224,7 @@ contract LottoGame is AccessControl {
     return gameMaxTicketsPlayer;
   }
 
-  function setMaxTickets(uint _max) public onlyRole(MANAGER_ROLE) returns(bool sufficient) {
+  function setMaxTicketsPerPlayer(uint _max) public onlyRole(MANAGER_ROLE) returns(bool sufficient) {
     gameMaxTicketsPlayer = _max;
     return true;
   }
