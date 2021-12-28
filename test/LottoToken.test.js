@@ -8,7 +8,6 @@ const LottoToken = artifacts.require('LottoToken');
 
 // Start test block
 contract('LottoToken', function ([ creator, other ]) {
-
   const NAME = 'LottoToken';
   const SYMBOL = 'LPT';
   const TOTAL_SUPPLY = new BN('10000000');

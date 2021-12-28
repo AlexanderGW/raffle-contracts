@@ -24,9 +24,6 @@ contract('LottoGame', function ([ creator, other ]) {
 
   it('should allow accounts to buy tickets', async function () {
 
-    // Set ERC20 token for the game to LottoToken
-    // await contract.setGameToken(token.address, { from: accounts[0] })
-
     // Start game for LottoToken, exactly one token per entry,
     // max three players, max one ticket per player.
     await contract.startGame(token.address, 1, 3, 1, {from: accounts[0]})
@@ -82,5 +79,6 @@ contract('LottoGame', function ([ creator, other ]) {
     // winner = await contract.pickWinner.call({from: accounts[0]});
     // console.log(winner);
     await contract.endGame({from: accounts[0]});
+  
   });
 });
