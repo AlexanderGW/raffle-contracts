@@ -170,11 +170,12 @@ contract LottoGame is AccessControl {
 
     uint _rand = _randModulus(100);
     uint _index = _rand % gameTickets.length;
-    gameLastWinner = gameTickets[_index];
+    address _gameLastWinner = gameTickets[_index];
 
-    gameToken.transfer(gameLastWinner, gameToken.balanceOf(address(this)));
+    gameToken.transfer(_gameLastWinner, gameToken.balanceOf(address(this)));
 
     _resetGame();
+	gameLastWinner = _gameLastWinner;
     gameComplete++;
   }
 
