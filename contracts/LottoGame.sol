@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import '@openzeppelin/contracts/access/AccessControl.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
+import 'abdk-libraries-solidity/ABDKMathQuad.sol';
 import './LottoToken.sol';
 import './Oracle.sol';
 
@@ -22,6 +23,10 @@ contract LottoGame is AccessControl {
   uint public gameMaxPlayers;
   uint public gameMaxTicketsPlayer;
   uint public gameTicketPrice;
+
+  // Percentage of the pot will go to `gameFeeAddress`
+  uint public gameFeePercent = 1;
+  address private gameFeeAddress;
 
   address public gameLastWinner;
   address public gameTokenAddress;
@@ -80,6 +85,8 @@ contract LottoGame is AccessControl {
 
   function startGame(
     address _token,
+    address _gameFeeAddress,
+    uint _gameFeePercent,
     uint _ticketPrice,
     uint _maxPlayers,
     uint _maxTicketsPlayer
@@ -88,6 +95,18 @@ contract LottoGame is AccessControl {
       gameState == false,
       "Game already started"
     );
+    require(
+      _ticketPrice > 0,
+      "Price greater than 0"
+    );
+    require(
+      _maxPlayers > 1,
+      "Max players greater than 1"
+    );
+    require(
+      _maxTicketsPlayer > 0,
+      "Max tickets greater than 0"
+    );
     
     gameState = true;
     gamePlayerCount = 0;
@@ -95,8 +114,11 @@ contract LottoGame is AccessControl {
     gameTokenAddress = _token;
     gameToken = ERC20(gameTokenAddress);
 
-    gameMaxPlayers = _maxPlayers;
+    gameFeeAddress = _gameFeeAddress;
+    gameFeePercent = _gameFeePercent;
+
     gameTicketPrice = _ticketPrice;
+    gameMaxPlayers = _maxPlayers;
     gameMaxTicketsPlayer = _maxTicketsPlayer;
   }
 
@@ -110,7 +132,12 @@ contract LottoGame is AccessControl {
       "Buy at least 1 ticket"
     );
 
-    uint totalPrice = uint(gameTicketPrice * _numberOfTickets);
+    uint totalPrice = ABDKMathQuad.toUInt(
+      ABDKMathQuad.mul(
+        ABDKMathQuad.fromUInt(gameTicketPrice),
+        ABDKMathQuad.fromUInt(_numberOfTickets)
+      )
+    );
     require(
       gameToken.allowance(msg.sender, address(this)) >= totalPrice,
       "Insufficent game token allowance"
@@ -150,6 +177,8 @@ contract LottoGame is AccessControl {
     // Update number of tickets purchased by player
     gamePlayers[msg.sender] = _playerTicketNextCount;
 
+    // Add each of the tickets to an array, a random index of this array 
+    // will be selected as winner.
     uint i;
     while (i != _numberOfTickets) {
       gameTickets.push(msg.sender);
@@ -167,14 +196,45 @@ contract LottoGame is AccessControl {
       "Need at least two players in game"
     );
 
+    // Close game
     gameState = false;
 
+    // Pick winner
     uint _rand = _randModulus(100);
-    uint _index = _rand % gameTickets.length;
+    uint _total = gameTickets.length - 1;
+    uint _index = _rand % _total;
     address _gameLastWinner = gameTickets[_index];
 
-    gameToken.transfer(_gameLastWinner, gameToken.balanceOf(address(this)));
+    // Sort pot
+    uint _pot = gameToken.balanceOf(address(this));
 
+    // Send fees (if applicable)
+    if (gameFeePercent > 0) {
+      // uint _gameFeePercent = (gameFeePercent / 100);
+      // uint _feeTotal = (_gameFeePercent * _pot);
+      uint _feeTotal = ABDKMathQuad.toUInt(
+        ABDKMathQuad.div(
+          ABDKMathQuad.div(
+            ABDKMathQuad.fromUInt(gameFeePercent),
+            ABDKMathQuad.fromUInt(100)
+          ),
+          ABDKMathQuad.fromUInt(_pot)
+        )
+      );
+      gameToken.transfer(gameFeeAddress, _feeTotal);
+      // _pot -= _feeTotal;
+      _pot = ABDKMathQuad.toUInt(
+        ABDKMathQuad.sub(
+          ABDKMathQuad.fromUInt(_pot),
+          ABDKMathQuad.fromUInt(_feeTotal)
+        )
+      );
+    }
+
+    // Send pot to winner
+    gameToken.transfer(_gameLastWinner, _pot);
+
+    // Prepare for the next game
     _resetGame();
     gameLastWinner = _gameLastWinner;
     gameCount++;
@@ -207,6 +267,10 @@ contract LottoGame is AccessControl {
   }
 
   function setTicketPrice(uint _price) public onlyRole(MANAGER_ROLE) returns(bool sufficient) {
+    require(
+      _price > 0,
+      "Price greater than 0"
+    );
     gameTicketPrice = _price;
     return true;
   }
@@ -216,6 +280,10 @@ contract LottoGame is AccessControl {
   }
 
   function setMaxPlayers(uint _max) public onlyRole(MANAGER_ROLE) returns(bool sufficient) {
+    require(
+      _max > 1,
+      "Max players greater than 1"
+    );
     gameMaxPlayers = _max;
     return true;
   }
@@ -225,7 +293,39 @@ contract LottoGame is AccessControl {
   }
 
   function setMaxTicketsPerPlayer(uint _max) public onlyRole(MANAGER_ROLE) returns(bool sufficient) {
+    require(
+      _max > 0,
+      "Max tickets greater than 0"
+    );
     gameMaxTicketsPlayer = _max;
+    return true;
+  }
+
+  function getGameFeePercent() public view returns(uint) {
+    return gameFeePercent;
+  }
+
+  function setGameFeePercent(uint _percent) public onlyRole(MANAGER_ROLE) returns(bool sufficient) {
+    require(
+      _percent >= 0,
+      "Zero or higher"
+    );
+    if (gameState == true) {
+      require(
+        _percent <= gameFeePercent,
+        "Can only be decreased after game start"
+      );
+    }
+    gameFeePercent = _percent;
+    return true;
+  }
+
+  function getGameFeeAddress() public view returns(address) {
+    return gameFeeAddress;
+  }
+
+  function setGameFeeAddress(address _address) public onlyRole(MANAGER_ROLE) returns(bool sufficient) {
+    gameFeeAddress = _address;
     return true;
   }
 
