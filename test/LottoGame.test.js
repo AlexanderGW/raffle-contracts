@@ -35,7 +35,7 @@ contract('LottoGame', function ([ creator, other ]) {
       accounts[8],
 
       // Game fee percent
-      1,
+      2,
 
       // Ticket price
       1000,
@@ -104,7 +104,7 @@ contract('LottoGame', function ([ creator, other ]) {
       accounts[9],
 
       // Game fee percent
-      1,
+      5,
 
       // Ticket price
       2000,

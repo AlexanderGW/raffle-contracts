@@ -132,18 +132,18 @@ contract LottoGame is AccessControl {
       "Buy at least 1 ticket"
     );
 
-    uint totalPrice = ABDKMathQuad.toUInt(
+    uint _totalPrice = ABDKMathQuad.toUInt(
       ABDKMathQuad.mul(
         ABDKMathQuad.fromUInt(gameTicketPrice),
         ABDKMathQuad.fromUInt(_numberOfTickets)
       )
     );
     require(
-      gameToken.allowance(msg.sender, address(this)) >= totalPrice,
+      gameToken.allowance(msg.sender, address(this)) >= _totalPrice,
       "Insufficent game token allowance"
     );
 
-    bool isNewPlayer = false;
+    bool _isNewPlayer = false;
     uint _playerTicketCount = gamePlayers[msg.sender];
 
     // First time player has entered the game
@@ -151,7 +151,7 @@ contract LottoGame is AccessControl {
       if (gamePlayerCount == gameMaxPlayers) {
         revert("Too many players in game");
       }
-      isNewPlayer = true;
+      _isNewPlayer = true;
     }
     
     // Check the new player ticket count
@@ -161,11 +161,11 @@ contract LottoGame is AccessControl {
       "Exceeds max player tickets, try lower value"
     );
 
-    // Transfer `totalPrice` of `gameToken` from player, this this contract
-    _safeTransferFrom(gameToken, msg.sender, address(this), totalPrice);
+    // Transfer `_totalPrice` of `gameToken` from player, this this contract
+    _safeTransferFrom(gameToken, msg.sender, address(this), _totalPrice);
 
     // If a new player (currently has no tickets)
-    if (isNewPlayer) {
+    if (_isNewPlayer) {
       
       // Increase game total player count
       gamePlayerCount++;
@@ -179,10 +179,10 @@ contract LottoGame is AccessControl {
 
     // Add each of the tickets to an array, a random index of this array 
     // will be selected as winner.
-    uint i;
-    while (i != _numberOfTickets) {
+    uint _i;
+    while (_i != _numberOfTickets) {
       gameTickets.push(msg.sender);
-      i++;
+      _i++;
     }
   }
 
@@ -213,7 +213,7 @@ contract LottoGame is AccessControl {
       // uint _gameFeePercent = (gameFeePercent / 100);
       // uint _feeTotal = (_gameFeePercent * _pot);
       uint _feeTotal = ABDKMathQuad.toUInt(
-        ABDKMathQuad.div(
+        ABDKMathQuad.mul(
           ABDKMathQuad.div(
             ABDKMathQuad.fromUInt(gameFeePercent),
             ABDKMathQuad.fromUInt(100)
@@ -229,6 +229,9 @@ contract LottoGame is AccessControl {
           ABDKMathQuad.fromUInt(_feeTotal)
         )
       );
+
+      // Recall instead?
+      // _pot = gameToken.balanceOf(address(this));
     }
 
     // Send pot to winner
@@ -241,7 +244,7 @@ contract LottoGame is AccessControl {
   }
 
   // function getPlayers() public view returns (address[] memory) {
-  //   return gameTickets;
+  //   return gamePlayers;
   // }
 
   function getGameCount() public view returns(uint) {
@@ -330,7 +333,7 @@ contract LottoGame is AccessControl {
   }
 
   function _randModulus(uint mod) internal returns(uint) {
-    uint rand = uint(
+    uint _rand = uint(
       keccak256(
         abi.encodePacked(
           nonce,
@@ -343,6 +346,6 @@ contract LottoGame is AccessControl {
       )
     ) % mod;
     nonce++;
-    return rand;
+    return _rand;
   }
 }
