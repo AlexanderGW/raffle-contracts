@@ -321,12 +321,15 @@ contract LottoGame is AccessControl {
     gameCount++;
   }
 
-  // function getPlayers() public view returns (address[] memory) {
-  //   return gamePlayers;
-  // }
+  /**
+   * @dev Return `gameState`. Set TRUE by `startGame()`, FALSE by `endGame()`
+   */
+  function getGameState() public view returns (bool) {
+    return gameState;
+  }
 
   /**
-   * @dev 
+   * @dev Return `gameCount`, the total number of completed games
    */
   function getGameCount() public view returns(uint) {
     return gameCount;
