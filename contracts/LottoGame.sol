@@ -10,41 +10,101 @@ import './Oracle.sol';
 
 contract LottoGame is AccessControl {
 
-  // Is game running?
+  /**
+   * @dev Is game running?
+   */
   bool public gameState;
 
-  // Increments with each `_randModulus()` call, for randomness 
+  /**
+   * @dev Increments with each `_randModulus()` call, for randomness
+   */
   uint nonce;
 
-  // Number of completed games
+  /**
+   * @dev Number of completed games
+   */
   uint public gameCount;
 
+  /**
+   * @dev Number of players in the current game
+   */
   uint public gamePlayerCount;
+
+  /**
+   * @dev Maximum number of players allowed in the game
+   */
   uint public gameMaxPlayers;
+
+  /**
+   * @dev Maximum number of tickets per player
+   */
   uint public gameMaxTicketsPlayer;
+
+  /**
+   * @dev Single ticket price
+   */
   uint public gameTicketPrice;
 
-  // Percentage of the pot will go to `gameFeeAddress`
+  /**
+   * @dev Percentage (hundredth) of the pot will go to `gameFeeAddress`.
+   * Zero value disables feature
+   */
   uint public gameFeePercent = 1;
+
+  /**
+   * @dev Destination for the game fee tokens
+   */
   address private gameFeeAddress;
 
+  /**
+   * @dev Address of the last game pot winner
+   */
   address public gameLastWinner;
+
+  /**
+   * @dev ERC-20 token address for game tickets
+   */
   address public gameTokenAddress;
+
+  /**
+   * @dev List of individual player tickets
+   */
   address[] public gameTickets;
+
+  /**
+   * @dev Cross reference for `gamePlayers` mapping
+   */
   address[] public gamePlayersIndex;
-  
+
+  /**
+   * @dev List of individual game players
+   */
   mapping(address => uint) public gamePlayers;
 
-  // The game token that players will play for.
+  /**
+   * @dev The game token that players will play for.
+   */
   ERC20 gameToken;
-  
-  // Randomness oracle, for selecting a winner on `endGame()`
+
+  /**
+   * @dev Randomness oracle, for selecting a winner on `endGame()`
+   */
   Oracle oracle;
 
-  // Roles
+  /**
+   * @dev Role for `startGame()`, `endGame()`
+   */
   bytes32 public constant CALLER_ROLE = keccak256("CALLER_ROLE");
+
+  /**
+   * @dev Role for `setGameToken()`, `setTicketPrice()`, `setMaxPlayers()`,
+   * `setMaxTicketsPerPlayer()`, `setGameFeePercent()`, `setGameFeeAddress()`
+   */
   bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
 
+  /**
+   * @dev 
+   */
   constructor(address _oracleAddress) {
 
     // Random oracle
@@ -57,6 +117,9 @@ contract LottoGame is AccessControl {
     _setupRole(CALLER_ROLE, msg.sender);
   }
 
+  /**
+   * @dev Used by `buyTicket()`
+   */
   function _safeTransferFrom(
     IERC20 token,
     address sender,
@@ -67,10 +130,9 @@ contract LottoGame is AccessControl {
     require(sent, "Token transfer failed");
   }
 
-  function resetGame() public onlyRole(CALLER_ROLE) {
-    _resetGame();
-  }
-
+  /**
+   * @dev Reset all game storage states
+   */
   function _resetGame() private {
     gameTickets = new address[](0);
     uint _gamePlayerCount = gamePlayerCount;
@@ -83,6 +145,16 @@ contract LottoGame is AccessControl {
     gamePlayersIndex = new address[](0);
   }
 
+  /**
+   * @dev Game reset call for managers
+   */
+  function resetGame() public onlyRole(MANAGER_ROLE) {
+    _resetGame();
+  }
+
+  /**
+   * @dev 
+   */
   function startGame(
     address _token,
     address _gameFeeAddress,
@@ -122,6 +194,9 @@ contract LottoGame is AccessControl {
     gameMaxTicketsPlayer = _maxTicketsPlayer;
   }
 
+  /**
+   * @dev 
+   */
   function buyTicket(uint _numberOfTickets) public {
     require(
       gameState == true,
@@ -186,6 +261,9 @@ contract LottoGame is AccessControl {
     }
   }
 
+  /**
+   * @dev 
+   */
   function endGame() public onlyRole(CALLER_ROLE) {
     require(
       gameState == true,
@@ -230,7 +308,7 @@ contract LottoGame is AccessControl {
         )
       );
 
-      // Recall instead?
+      // GAS: Recall instead?
       // _pot = gameToken.balanceOf(address(this));
     }
 
@@ -247,28 +325,46 @@ contract LottoGame is AccessControl {
   //   return gamePlayers;
   // }
 
+  /**
+   * @dev 
+   */
   function getGameCount() public view returns(uint) {
     return gameCount;
   }
 
+  /**
+   * @dev 
+   */
   function getGamePlayerCount() public view returns(uint) {
     return gamePlayerCount;
   }
 
+  /**
+   * @dev 
+   */
   function getGameToken() public view returns(address) {
     return gameTokenAddress;
   }
 
+  /**
+   * @dev 
+   */
   function setGameToken(address _token) public onlyRole(MANAGER_ROLE) returns(bool sufficient) {
     gameTokenAddress = _token;
     gameToken = ERC20(gameTokenAddress);
     return true;
   }
 
+  /**
+   * @dev 
+   */
   function getTicketPrice() public view returns(uint) {
     return gameTicketPrice;
   }
 
+  /**
+   * @dev 
+   */
   function setTicketPrice(uint _price) public onlyRole(MANAGER_ROLE) returns(bool sufficient) {
     require(
       _price > 0,
@@ -278,10 +374,16 @@ contract LottoGame is AccessControl {
     return true;
   }
 
+  /**
+   * @dev 
+   */
   function getMaxPlayers() public view returns(uint) {
     return gameMaxPlayers;
   }
 
+  /**
+   * @dev 
+   */
   function setMaxPlayers(uint _max) public onlyRole(MANAGER_ROLE) returns(bool sufficient) {
     require(
       _max > 1,
@@ -291,10 +393,16 @@ contract LottoGame is AccessControl {
     return true;
   }
 
+  /**
+   * @dev 
+   */
   function getMaxTicketsPerPlayer() public view returns(uint) {
     return gameMaxTicketsPlayer;
   }
 
+  /**
+   * @dev 
+   */
   function setMaxTicketsPerPlayer(uint _max) public onlyRole(MANAGER_ROLE) returns(bool sufficient) {
     require(
       _max > 0,
@@ -304,10 +412,16 @@ contract LottoGame is AccessControl {
     return true;
   }
 
+  /**
+   * @dev 
+   */
   function getGameFeePercent() public view returns(uint) {
     return gameFeePercent;
   }
 
+  /**
+   * @dev 
+   */
   function setGameFeePercent(uint _percent) public onlyRole(MANAGER_ROLE) returns(bool sufficient) {
     require(
       _percent >= 0,
@@ -323,15 +437,24 @@ contract LottoGame is AccessControl {
     return true;
   }
 
+  /**
+   * @dev 
+   */
   function getGameFeeAddress() public view returns(address) {
     return gameFeeAddress;
   }
 
+  /**
+   * @dev 
+   */
   function setGameFeeAddress(address _address) public onlyRole(MANAGER_ROLE) returns(bool sufficient) {
     gameFeeAddress = _address;
     return true;
   }
 
+  /**
+   * @dev 
+   */
   function _randModulus(uint mod) internal returns(uint) {
     uint _rand = uint(
       keccak256(

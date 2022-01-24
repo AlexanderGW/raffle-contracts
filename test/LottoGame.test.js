@@ -85,8 +85,6 @@ contract('LottoGame', function ([ creator, other ]) {
     // let count4 = await contract.getGamePlayerCount({from: accounts[4]});
 
     // Choose a random winner
-    // let winner = await contract.pickWinner.call({from: accounts[0]});
-    // console.log(winner);
     await contract.endGame({from: accounts[0]});
 
     let fees = await token.balanceOf.call(accounts[8], {from: accounts[0]});
@@ -133,3 +131,4 @@ contract('LottoGame', function ([ creator, other ]) {
   
   });
 });
+
