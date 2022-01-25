@@ -4,8 +4,8 @@ const LottoToken = artifacts.require("LottoToken");
 
 module.exports = function (deployer) {
   deployer.deploy(Oracle).then(x => {
-    deployer.deploy(LottoGame, x.address).then(y => {
-      deployer.deploy(LottoToken, y.address)
+    return deployer.deploy(LottoGame, x.address).then(y => {
+      return deployer.deploy(LottoToken, y.address)
     });
   });
 };
