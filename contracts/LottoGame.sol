@@ -121,7 +121,7 @@ contract LottoGame is AccessControl {
   );
 
   /**
-   * @dev 
+   * @dev Setup contract
    */
   constructor(address _oracleAddress) {
 
@@ -171,7 +171,7 @@ contract LottoGame is AccessControl {
   }
 
   /**
-   * @dev 
+   * @dev Start a new game (if none running) with given parameters
    */
   function startGame(
     address _token,
@@ -219,7 +219,7 @@ contract LottoGame is AccessControl {
   }
 
   /**
-   * @dev 
+   * @dev Allow a player to buy N ticket(s), at predefined `gameTicketPrice` of `gameToken`
    */
   function buyTicket(uint _numberOfTickets) public {
     require(
@@ -231,6 +231,7 @@ contract LottoGame is AccessControl {
       "Buy at least 1 ticket"
     );
 
+    // Ensure player has enough tokens to play
     uint _totalPrice = ABDKMathQuad.toUInt(
       ABDKMathQuad.mul(
         ABDKMathQuad.fromUInt(gameTicketPrice),
@@ -242,7 +243,10 @@ contract LottoGame is AccessControl {
       "Insufficent game token allowance"
     );
 
+    // Marker for new player logic
     bool _isNewPlayer = false;
+
+    // Current number of tickets that this player has
     uint _playerTicketCount = gamePlayers[msg.sender];
 
     // First time player has entered the game
@@ -286,7 +290,7 @@ contract LottoGame is AccessControl {
   }
 
   /**
-   * @dev 
+   * @dev Ends the current game, and picks a winner
    */
   function endGame() public onlyRole(CALLER_ROLE) {
     require(
@@ -307,7 +311,7 @@ contract LottoGame is AccessControl {
     uint _index = _rand % _total;
     address _gameLastWinner = gameTickets[_index];
 
-    // Sort pot
+    // Game pot
     uint _pot = gameToken.balanceOf(address(this));
 
     // Send fees (if applicable)
@@ -323,6 +327,8 @@ contract LottoGame is AccessControl {
           ABDKMathQuad.fromUInt(_pot)
         )
       );
+
+      // Transfer game fee
       gameToken.transfer(gameFeeAddress, _feeTotal);
       // _pot -= _feeTotal;
       _pot = ABDKMathQuad.toUInt(
@@ -375,21 +381,21 @@ contract LottoGame is AccessControl {
   }
 
   /**
-   * @dev 
+   * @dev Returns total number of unique game players
    */
   function getGamePlayerCount() public view returns(uint) {
     return gamePlayerCount;
   }
 
   /**
-   * @dev 
+   * @dev Returns `gameTokenAddress` of current `gameToken`
    */
   function getGameToken() public view returns(address) {
     return gameTokenAddress;
   }
 
   /**
-   * @dev 
+   * @dev Define new ERC20 `gameToken` with provided `_token`
    */
   function setGameToken(address _token) public onlyRole(MANAGER_ROLE) returns(bool sufficient) {
     gameTokenAddress = _token;
@@ -398,14 +404,14 @@ contract LottoGame is AccessControl {
   }
 
   /**
-   * @dev 
+   * @dev Returns current game ticket price
    */
   function getTicketPrice() public view returns(uint) {
     return gameTicketPrice;
   }
 
   /**
-   * @dev 
+   * @dev Define new game ticket price
    */
   function setTicketPrice(uint _price) public onlyRole(MANAGER_ROLE) returns(bool sufficient) {
     require(
@@ -417,14 +423,14 @@ contract LottoGame is AccessControl {
   }
 
   /**
-   * @dev 
+   * @dev Returns maximum number of unique game player
    */
   function getMaxPlayers() public view returns(uint) {
     return gameMaxPlayers;
   }
 
   /**
-   * @dev 
+   * @dev Defines maximum number of unique game players
    */
   function setMaxPlayers(uint _max) public onlyRole(MANAGER_ROLE) returns(bool sufficient) {
     require(
@@ -436,14 +442,14 @@ contract LottoGame is AccessControl {
   }
 
   /**
-   * @dev 
+   * @dev Returns maximum number of tickets, per unique game player
    */
   function getMaxTicketsPerPlayer() public view returns(uint) {
     return gameMaxTicketsPlayer;
   }
 
   /**
-   * @dev 
+   * @dev Defines maximum number of tickets, per unique game player
    */
   function setMaxTicketsPerPlayer(uint _max) public onlyRole(MANAGER_ROLE) returns(bool sufficient) {
     require(
@@ -455,14 +461,14 @@ contract LottoGame is AccessControl {
   }
 
   /**
-   * @dev 
+   * @dev Returns current game fee percentage, deducted from the game pot, called in `endGame`
    */
   function getGameFeePercent() public view returns(uint) {
     return gameFeePercent;
   }
 
   /**
-   * @dev 
+   * @dev Defines the game fee percentage (can only be lower than original value)
    */
   function setGameFeePercent(uint _percent) public onlyRole(MANAGER_ROLE) returns(bool sufficient) {
     require(
@@ -480,14 +486,14 @@ contract LottoGame is AccessControl {
   }
 
   /**
-   * @dev 
+   * @dev Returns the address for the game fee
    */
   function getGameFeeAddress() public view returns(address) {
     return gameFeeAddress;
   }
 
   /**
-   * @dev 
+   * @dev Defines an address for the game fee
    */
   function setGameFeeAddress(address _address) public onlyRole(MANAGER_ROLE) returns(bool sufficient) {
     gameFeeAddress = _address;
@@ -495,7 +501,7 @@ contract LottoGame is AccessControl {
   }
 
   /**
-   * @dev 
+   * @dev Returns a random seed
    */
   function _randModulus(uint mod) internal returns(uint) {
     uint _rand = uint(
