@@ -23,6 +23,7 @@ contract('LottoGame', function ([ creator, other ]) {
   });
 
   it('should allow accounts to buy tickets', async function () {
+    let expected, actual;
 
     // Start game for LottoToken, exactly one token per entry,
     // max three players, max one ticket per player.
@@ -49,6 +50,13 @@ contract('LottoGame', function ([ creator, other ]) {
       {from: accounts[0]}
     )
 
+    // Number of games is still zero
+    expected = web3.utils.toBN('0');
+    actual = await contract.getGameCount.call({from: accounts[0]});
+    // console.log(actual);
+    // console.log(expected);
+    expect(actual).to.eql(expected);
+
     // Seed accounts for testing
     // let totalSupply = await token.totalSupply({ from: accounts[0] })
     await token.approve(accounts[0], 100000, {from: accounts[0]})
@@ -60,36 +68,99 @@ contract('LottoGame', function ([ creator, other ]) {
     // Approve and buy 1 ticket for A1
     await token.approve(contract.address, 5000, {from: accounts[1]});
     await contract.buyTicket(1, {from: accounts[1]})
-    let count = await contract.getGamePlayerCount({from: accounts[1]});
-    // console.log(count);
-    // expect(count).to.be.bignumber;
-    // assert(count === 1, 'Number of players 1');
+    
+    // Number of game players increases by one
+    expected = web3.utils.toBN('1');
+    actual = await contract.getGamePlayerCount.call({from: accounts[1]});
+    // console.log(actual);
+    // console.log(expected);
+    expect(actual).to.eql(expected);
+
+    // Buy second ticket for A1 (should fail)
+    try {
+      await contract.buyTicket(1, {from: accounts[1]});
+      assert.fail('The transaction should have thrown an error');
+    } catch (err) {
+      assert.include(
+        err.message,
+        "Exceeds max player tickets, try lower value",
+        "The error message should contain 'Exceeds max player tickets, try lower value'"
+      );
+    }
 
     // Approve and buy 1 ticket for A2
     await token.approve(contract.address, 5000, {from: accounts[2]});
     await contract.buyTicket(1, {from: accounts[2]})
-    let count2 = await contract.getGamePlayerCount({from: accounts[2]});
-    // expect(count2).to.be.bignumber;
-    // assert(count2 === 2, 'Number of players 2');
+    
+    // Number of game players increases by one, to two
+    expected = web3.utils.toBN('2');
+    actual = await contract.getGamePlayerCount.call({from: accounts[2]});
+    // console.log(actual);
+    // console.log(expected);
+    expect(actual).to.eql(expected);
 
     // Approve and buy 1 ticket for A3
     await token.approve(contract.address, 5000, {from: accounts[3]});
     await contract.buyTicket(1, {from: accounts[3]})
-    let count3 = await contract.getGamePlayerCount({from: accounts[3]});
-    // expect(count3).to.be.bignumber;
-    // assert(count3 === 3, 'Number of players 3');
+    
+    // Number of game players increases by one, to three
+    expected = web3.utils.toBN('3');
+    actual = await contract.getGamePlayerCount.call({from: accounts[3]});
+    // console.log(actual);
+    // console.log(expected);
+    expect(actual).to.eql(expected);
 
-    // Approve and buy 1 ticket for A4 (should fail)
-    // await token.approve(contract.address, 100, {from: accounts[4]});
-    // await contract.buyTicket(1, {from: accounts[4]})
-    // let count4 = await contract.getGamePlayerCount({from: accounts[4]});
+    // Approve for A4
+    await token.approve(contract.address, 5000, {from: accounts[4]});
+    
+    // Buy 1 ticket for A4 (should fail)
+    try {
+      await contract.buyTicket(1, {from: accounts[4]});
+      assert.fail('The transaction should have thrown an error');
+    } catch (err) {
+      assert.include(
+        err.message,
+        "Too many players in game",
+        "The error message should contain 'Too many players in game'"
+      );
+    }
+
+    // Game fee is 2%
+    expected = web3.utils.toBN('2');
+    actual = await contract.getGameFeePercent.call({from: accounts[1]});
+    // console.log(actual);
+    // console.log(expected);
+    expect(actual).to.eql(expected);
+
+    // Set game fee to 3% (should fail)
+    try {
+      await contract.setGameFeePercent(3, {from: accounts[0]});
+      assert.fail('The transaction should have thrown an error');
+    } catch (err) {
+      assert.include(
+        err.message,
+        "Can only be decreased after game start",
+        "The error message should contain 'Can only be decreased after game start'"
+      );
+    }
 
     // Choose a random winner
     await contract.endGame({from: accounts[0]});
 
-    let fees = await token.balanceOf.call(accounts[8], {from: accounts[0]});
-    // let fees = await token.balanceOf(accounts[8], {from: accounts[0]});
-    console.log(fees);
+    // Get last game winner
+    // actual = await contract.getGameLastWinner.call({from: accounts[1]});
+    // expect(actual).to.be.properAddress;
+
+    // Game count is one
+    expected = web3.utils.toBN('1');
+    actual = await contract.getGameCount.call({from: accounts[1]});
+    // console.log(actual);
+    // console.log(expected);
+    expect(actual).to.eql(expected);
+
+
+
+
 
     // Start game for LottoToken, exactly two token per entry,
     // max three players, max two tickets per player.
@@ -120,15 +191,8 @@ contract('LottoGame', function ([ creator, other ]) {
     count = await contract.buyTicket(2, {from: accounts[1]});
     count2 = await contract.buyTicket(2, {from: accounts[2]});
     count3 = await contract.buyTicket(2, {from: accounts[3]});
-    // winner = await contract.pickWinner.call({from: accounts[0]});
-    // console.log(winner);
-
-    // Set destination for the game fee.
-    // await contract.setGameFeePercent(1, {from: accounts[0]})
-    // await contract.setGameFeeAddress(accounts[9], {from: accounts[0]})
 
     await contract.endGame({from: accounts[0]});
   
   });
 });
-
