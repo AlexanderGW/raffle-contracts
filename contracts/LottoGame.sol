@@ -103,6 +103,24 @@ contract LottoGame is AccessControl {
   bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
 
   /**
+   * @dev Emitted when a game is started
+   */
+  event GameStart(
+    uint256 indexed _gameId,
+    address indexed _gameTokenAddress
+  );
+
+  /**
+   * @dev Emitted when a game ends, and a player has won
+   */
+  event GameEnd(
+    uint256 indexed _gameId,
+    address indexed _gameTokenAddress,
+    address indexed _gamePlayer,
+    uint256 _value
+  );
+
+  /**
    * @dev 
    */
   constructor(address _oracleAddress) {
@@ -192,6 +210,12 @@ contract LottoGame is AccessControl {
     gameTicketPrice = _ticketPrice;
     gameMaxPlayers = _maxPlayers;
     gameMaxTicketsPlayer = _maxTicketsPlayer;
+
+    // Fire `GameStart` event
+    emit GameStart(
+      gameCount,
+      gameTokenAddress
+    );
   }
 
   /**
@@ -315,6 +339,14 @@ contract LottoGame is AccessControl {
     // Send pot to winner
     gameToken.transfer(_gameLastWinner, _pot);
 
+    // Fire `GameEnd` event
+    emit GameEnd(
+      gameCount,
+      gameTokenAddress,
+      _gameLastWinner,
+      _pot
+    );
+
     // Prepare for the next game
     _resetGame();
     gameLastWinner = _gameLastWinner;
@@ -331,8 +363,15 @@ contract LottoGame is AccessControl {
   /**
    * @dev Return `gameCount`, the total number of completed games
    */
-  function getGameCount() public view returns(uint) {
+  function getGameCount() public view returns(uint256) {
     return gameCount;
+  }
+
+  /**
+   * @dev Return `gameLastWinner`, of the last game
+   */
+  function getGameLastWinner() public view returns(address) {
+    return gameLastWinner;
   }
 
   /**
