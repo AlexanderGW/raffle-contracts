@@ -31,6 +31,11 @@ contract LottoGame is AccessControl {
   uint public gamePlayerCount;
 
   /**
+   * @dev Number of all player tickets in the current game
+   */
+  uint public gameTicketCount;
+
+  /**
    * @dev Maximum number of players allowed in the game
    */
   uint public gameMaxPlayers;
@@ -161,6 +166,8 @@ contract LottoGame is AccessControl {
       delete gamePlayers[j];
     }
     gamePlayersIndex = new address[](0);
+    gamePlayerCount = 0;
+    gameTicketCount = 0;
   }
 
   /**
@@ -198,8 +205,10 @@ contract LottoGame is AccessControl {
       "Max tickets greater than 0"
     );
     
+    // Reset game states
+    _resetGame();
+
     gameState = true;
-    gamePlayerCount = 0;
 
     gameTokenAddress = _token;
     gameToken = ERC20(gameTokenAddress);
@@ -287,6 +296,9 @@ contract LottoGame is AccessControl {
       gameTickets.push(msg.sender);
       _i++;
     }
+
+    // Increase total number of game player tickets
+    gameTicketCount += _numberOfTickets;
   }
 
   /**
@@ -385,6 +397,13 @@ contract LottoGame is AccessControl {
    */
   function getGamePlayerCount() public view returns(uint) {
     return gamePlayerCount;
+  }
+
+  /**
+   * @dev Returns total number of all game player tickets
+   */
+  function getGameTicketCount() public view returns(uint) {
+    return gameTicketCount;
   }
 
   /**
