@@ -13,7 +13,7 @@ contract LottoGame is AccessControl {
   /**
    * @dev Is game running?
    */
-  bool public gameState;
+  bool public gameStatus;
 
   /**
    * @dev Increments with each `_randModulus()` call, for randomness
@@ -189,7 +189,7 @@ contract LottoGame is AccessControl {
     uint _maxTicketsPlayer
   ) public onlyRole(CALLER_ROLE) {
     require(
-      gameState == false,
+      gameStatus == false,
       "Game already started"
     );
     require(
@@ -208,7 +208,7 @@ contract LottoGame is AccessControl {
     // Reset game states
     _resetGame();
 
-    gameState = true;
+    gameStatus = true;
 
     gameTokenAddress = _token;
     gameToken = ERC20(gameTokenAddress);
@@ -232,7 +232,7 @@ contract LottoGame is AccessControl {
    */
   function buyTicket(uint _numberOfTickets) public {
     require(
-      gameState == true,
+      gameStatus == true,
       "Game not started"
     );
     require(
@@ -306,7 +306,7 @@ contract LottoGame is AccessControl {
    */
   function endGame() public onlyRole(CALLER_ROLE) {
     require(
-      gameState == true,
+      gameStatus == true,
       "Game already ended"
     );
     require(
@@ -315,7 +315,7 @@ contract LottoGame is AccessControl {
     );
 
     // Close game
-    gameState = false;
+    gameStatus = false;
 
     // Pick winner
     uint _rand = _randModulus(100);
@@ -372,10 +372,10 @@ contract LottoGame is AccessControl {
   }
 
   /**
-   * @dev Return `gameState`. Set TRUE by `startGame()`, FALSE by `endGame()`
+   * @dev Return `gameStatus`. Set TRUE by `startGame()`, FALSE by `endGame()`
    */
-  function getGameState() public view returns (bool) {
-    return gameState;
+  function getGameStatus() public view returns (bool) {
+    return gameStatus;
   }
 
   /**
@@ -494,7 +494,7 @@ contract LottoGame is AccessControl {
       _percent >= 0,
       "Zero or higher"
     );
-    if (gameState == true) {
+    if (gameStatus == true) {
       require(
         _percent <= gameFeePercent,
         "Can only be decreased after game start"
