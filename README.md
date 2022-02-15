@@ -1,4 +1,4 @@
-# An EVM Solidity lottery contract
+# Blockchain raffle (Solidity EVM contracts)
 
 ## Warning: These contracts have not been audited. I am not responsible for any loss of funds or damages incurred.
 
