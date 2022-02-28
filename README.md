@@ -18,3 +18,5 @@
 ## Testing
 `truffle test`
 
+## A Next.js front-end
+https://github.com/AlexanderGW/raffle-nextjs
