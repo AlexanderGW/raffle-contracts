@@ -122,7 +122,9 @@ contract('LottoGame', function ([ creator, other ]) {
 
     expect(game0A1TicketLog.gameNumber.toNumber()).to.eql(0);
 
-    expect(game0A1TicketLog.numberOfTickets.toNumber()).to.eql(1);
+    expect(game0A1TicketLog.playerCount.toNumber()).to.eql(1);
+
+    expect(game0A1TicketLog.ticketCount.toNumber()).to.eql(1);
 
     // Number of game players increases by one
     expected = web3.utils.toBN('1');
