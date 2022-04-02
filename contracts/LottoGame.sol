@@ -155,10 +155,11 @@ contract LottoGame is AccessControl {
   /**
    * @dev Emitted when a player buys ticket(s)
    */
-  event GameTicketBought(
+  event TicketBought(
     address indexed playerAddress,
     uint256 indexed gameNumber,
-    uint256 numberOfTickets
+    uint256 playerCount,
+    uint256 ticketCount
   );
 
   /**
@@ -374,10 +375,11 @@ contract LottoGame is AccessControl {
     // Increase total number of game player tickets
     g.ticketCount += _numberOfTickets;
 
-    // Fire `GameTicketBought` event
-    emit GameTicketBought(
+    // Fire `TicketBought` event
+    emit TicketBought(
       msg.sender,
       g.number,
+      g.playerCount,
       g.ticketCount
     );
   }
