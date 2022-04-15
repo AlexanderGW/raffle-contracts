@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import '@openzeppelin/contracts/access/AccessControl.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
-import 'abdk-libraries-solidity/ABDKMathQuad.sol';
+
 import './LottoToken.sol';
 import './Oracle.sol';
 
@@ -23,43 +23,43 @@ contract LottoGame is AccessControl {
     /**
      * @dev Number assigned to the game (sequental, based on total games)
      */
-    uint number;
+    uint256 number;
 
     /**
      * @dev Total value of token pot
      */
-    uint pot;
+    uint256 pot;
 
     /**
      * @dev Number of players in the current game
      */
-    uint playerCount;
+    uint256 playerCount;
 
     /**
      * @dev Number of all player tickets in the current game
      */
-    uint ticketCount;
+    uint256 ticketCount;
 
     /**
      * @dev Maximum number of players allowed in the game
      */
-    uint maxPlayers;
+    uint256 maxPlayers;
 
     /**
      * @dev Maximum number of tickets per player
      */
-    uint maxTicketsPlayer;
+    uint256 maxTicketsPlayer;
 
     /**
      * @dev Single ticket price
      */
-    uint ticketPrice;
+    uint256 ticketPrice;
 
     /**
      * @dev Percentage (hundredth) of the pot will go to `gameFeeAddress`.
      * Zero value disables feature
      */
-    uint feePercent;
+    uint256 feePercent;
 
     /**
      * @dev Owner address of the game
@@ -95,7 +95,7 @@ contract LottoGame is AccessControl {
     /**
      * @dev List of unique game players
      */
-    mapping (address => uint) players;
+    mapping (address => uint256) players;
 
     /**
      * @dev The game token that players will play for.
@@ -106,22 +106,22 @@ contract LottoGame is AccessControl {
   /**
    * @dev Storage for all games (Game structs)
    */
-  mapping (uint => Game) games;
+  mapping (uint256 => Game) games;
 
   /**
    * @dev Increments with each `_randModulus()` call, for randomness
    */
-  uint nonce;
+  uint256 nonce;
 
   /**
    * @dev Total number of games (increments in `startGame`)
    */
-  uint public totalGames;
+  uint256 public totalGames;
 
   /**
    * @dev Total number of games ended (increments in `endGame`)
    */
-  uint public totalGamesEnded;
+  uint256 public totalGamesEnded;
 
   /**
    * @dev Randomness oracle, for selecting a winner on `endGame()`
@@ -175,9 +175,11 @@ contract LottoGame is AccessControl {
   /**
    * @dev Setup contract
    */
-  constructor(address _oracleAddress) {
+  constructor(
+    address _oracleAddress
+  ) {
 
-    // Random oracle
+    // Oracle of randomness
     oracle = Oracle(_oracleAddress);
 
     // Grant the contract deployer the default admin role: it will be able
@@ -194,7 +196,7 @@ contract LottoGame is AccessControl {
     IERC20 token,
     address sender,
     address recipient,
-    uint amount
+    uint256 amount
   ) private {
     bool sent = token.transferFrom(sender, recipient, amount);
     require(sent, "Token transfer failed");
@@ -204,7 +206,7 @@ contract LottoGame is AccessControl {
    * @dev Reset all game storage states
    */
   function _resetGame(
-    uint _gameNumber
+    uint256 _gameNumber
   ) private {
     Game storage g = games[_gameNumber];
 
@@ -214,12 +216,12 @@ contract LottoGame is AccessControl {
     );
     require(
       g.status == true,
-      "Game ended"
+      "Game already ended"
     );
 
     g.tickets = new address[](0);
     address j;
-    for (uint i = 0; i < g.playerCount; i++) {
+    for (uint256 i = 0; i < g.playerCount; i++) {
       j = g.playersIndex[i];
       delete g.players[j];
     }
@@ -232,7 +234,7 @@ contract LottoGame is AccessControl {
    * @dev Game reset call for managers
    */
   function resetGame(
-    uint _gameNumber
+    uint256 _gameNumber
   ) external onlyRole(MANAGER_ROLE) {
     _resetGame(_gameNumber);
   }
@@ -243,10 +245,10 @@ contract LottoGame is AccessControl {
   function startGame(
     address _gameTokenAddress,
     address _gameFeeAddress,
-    uint _gameFeePercent,
-    uint _ticketPrice,
-    uint _maxPlayers,
-    uint _maxTicketsPlayer
+    uint256 _gameFeePercent,
+    uint256 _ticketPrice,
+    uint256 _maxPlayers,
+    uint256 _maxTicketsPlayer
   ) external onlyRole(CALLER_ROLE) {
     require(
       _ticketPrice > 0,
@@ -262,7 +264,7 @@ contract LottoGame is AccessControl {
     );
 
     // Get game number
-    uint _gameNumber = totalGames++;
+    uint256 _gameNumber = totalGames++;
 
     // Create new game record
     Game storage g = games[_gameNumber];
@@ -294,18 +296,18 @@ contract LottoGame is AccessControl {
    * @dev Allow a player to buy Nth tickets in `_gameNumber`, at predefined `g.ticketPrice` of `g.token`
    */
   function buyTicket(
-    uint _gameNumber,
-    uint _numberOfTickets
+    uint256 _gameNumber,
+    uint256 _numberOfTickets
   ) external {
     Game storage g = games[_gameNumber];
 
     require(
-      g.playerCount >= 0,
+      g.maxPlayers >= 0,
       "Invalid game"
     );
     require(
-      g.status,
-      "Game ended"
+      g.status == true,
+      "Game already ended"
     );
     require(
       _numberOfTickets > 0,
@@ -313,12 +315,13 @@ contract LottoGame is AccessControl {
     );
 
     // Ensure player has enough tokens to play
-    uint _totalCost = ABDKMathQuad.toUInt(
-      ABDKMathQuad.mul(
-        ABDKMathQuad.fromUInt(g.ticketPrice),
-        ABDKMathQuad.fromUInt(_numberOfTickets)
-      )
-    );
+    // uint256 _totalCost = ABDKMathQuad.toUInt(
+    //   ABDKMathQuad.mul(
+    //     ABDKMathQuad.fromUInt(g.ticketPrice),
+    //     ABDKMathQuad.fromUInt(_numberOfTickets)
+    //   )
+    // );
+    uint256 _totalCost = g.ticketPrice * _numberOfTickets;
     require(
       g.token.allowance(msg.sender, address(this)) >= _totalCost,
       "Insufficent game token allowance"
@@ -328,7 +331,7 @@ contract LottoGame is AccessControl {
     bool _isNewPlayer = false;
 
     // Current number of tickets that this player has
-    uint _playerTicketCount = g.players[msg.sender];
+    uint256 _playerTicketCount = g.players[msg.sender];
 
     // First time player has entered the game
     if (_playerTicketCount == 0) {
@@ -339,7 +342,7 @@ contract LottoGame is AccessControl {
     }
     
     // Check the new player ticket count
-    uint _playerTicketNextCount = _playerTicketCount + _numberOfTickets;
+    uint256 _playerTicketNextCount = _playerTicketCount + _numberOfTickets;
     require(
       _playerTicketNextCount <= g.maxTicketsPlayer,
       "Exceeds max player tickets, try lower value"
@@ -353,7 +356,7 @@ contract LottoGame is AccessControl {
 
     // If a new player (currently has no tickets)
     if (_isNewPlayer) {
-      
+
       // Increase game total player count
       g.playerCount++;
 
@@ -366,7 +369,7 @@ contract LottoGame is AccessControl {
 
     // Add each of the tickets to an array, a random index of this array 
     // will be selected as winner.
-    uint _i;
+    uint256 _i;
     while (_i != _numberOfTickets) {
       g.tickets.push(msg.sender);
       _i++;
@@ -388,7 +391,7 @@ contract LottoGame is AccessControl {
    * @dev Ends the current game, and picks a winner
    */
   function endGame(
-    uint _gameNumber
+    uint256 _gameNumber
   ) external onlyRole(CALLER_ROLE) {
     Game storage g = games[_gameNumber];
 
@@ -409,36 +412,40 @@ contract LottoGame is AccessControl {
     g.status = false;
 
     // Pick winner
-    uint _rand = _randModulus(100);
-    uint _total = g.tickets.length - 1;
-    uint _index = _rand % _total;
+    uint256 _rand = _randModulus(100);
+    uint256 _total = g.tickets.length - 1;
+    uint256 _index = _rand % _total;
     g.winnerAddress = g.tickets[_index];
 
     // Game total pot
-    uint _pot = g.pot;
+    uint256 _pot = g.pot;
 
     // Send fees (if applicable)
     if (g.feePercent > 0) {
-      uint _feeTotal = ABDKMathQuad.toUInt(
-        ABDKMathQuad.mul(
-          ABDKMathQuad.div(
-            ABDKMathQuad.fromUInt(g.feePercent),
-            ABDKMathQuad.fromUInt(100)
-          ),
-          ABDKMathQuad.fromUInt(_pot)
-        )
-      );
+      // uint256 _feeTotal = ABDKMathQuad.toUInt(
+      //   ABDKMathQuad.mul(
+      //     ABDKMathQuad.div(
+      //       ABDKMathQuad.fromUInt(g.feePercent),
+      //       ABDKMathQuad.fromUInt(100)
+      //     ),
+      //     ABDKMathQuad.fromUInt(_pot)
+      //   )
+      // );
+      uint256 _feeTotal = (g.feePercent / 100) * _pot;
 
       // Transfer game fee from pot
-      g.token.transfer(g.feeAddress, _feeTotal);
+      if (_feeTotal > 0) {
+        g.token.transfer(g.feeAddress, _feeTotal);
 
-      // Deduct fee from pot value
-      _pot = ABDKMathQuad.toUInt(
-        ABDKMathQuad.sub(
-          ABDKMathQuad.fromUInt(_pot),
-          ABDKMathQuad.fromUInt(_feeTotal)
-        )
-      );
+        // Deduct fee from pot value
+        // _pot = ABDKMathQuad.toUInt(
+        //   ABDKMathQuad.sub(
+        //     ABDKMathQuad.fromUInt(_pot),
+        //     ABDKMathQuad.fromUInt(_feeTotal)
+        //   )
+        // );
+        _pot -= _feeTotal;
+      }
     }
 
     // Send pot to winner
@@ -460,17 +467,17 @@ contract LottoGame is AccessControl {
    * @dev Return an array of useful game states
    */
   function getGameState(
-    uint _gameNumber
+    uint256 _gameNumber
   ) external view
   returns (
     bool status,
-    uint pot,
-    uint playerCount,
-    uint ticketCount,
-    uint maxPlayers,
-    uint maxTicketsPlayer,
-    uint ticketPrice,
-    uint feePercent,
+    uint256 pot,
+    uint256 playerCount,
+    uint256 ticketCount,
+    uint256 maxPlayers,
+    uint256 maxTicketsPlayer,
+    uint256 ticketPrice,
+    uint256 feePercent,
     address feeAddress,
     address tokenAddress,
     address winnerAddress
@@ -508,7 +515,7 @@ contract LottoGame is AccessControl {
    * @dev Define new ERC20 `gameToken` with provided `_token`
    */
   function setGameToken(
-    uint _gameNumber,
+    uint256 _gameNumber,
     address _token
   ) external onlyRole(MANAGER_ROLE) returns(bool sufficient) {
     Game storage g = games[_gameNumber];
@@ -516,6 +523,10 @@ contract LottoGame is AccessControl {
     require(
       g.maxPlayers > 0,
       "Invalid game"
+    );
+    require(
+      g.status == true,
+      "Game already ended"
     );
 
     g.tokenAddress = _token;
@@ -528,14 +539,18 @@ contract LottoGame is AccessControl {
    * @dev Define new game ticket price
    */
   function setTicketPrice(
-    uint _gameNumber,
-    uint _price
+    uint256 _gameNumber,
+    uint256 _price
   ) external onlyRole(MANAGER_ROLE) returns(bool sufficient) {
     Game storage g = games[_gameNumber];
 
     require(
       g.maxPlayers > 0,
       "Invalid game"
+    );
+    require(
+      g.status == true,
+      "Game already ended"
     );
     require(
       _price > 0,
@@ -551,14 +566,18 @@ contract LottoGame is AccessControl {
    * @dev Defines maximum number of unique game players
    */
   function setMaxPlayers(
-    uint _gameNumber,
-    uint _max
+    uint256 _gameNumber,
+    uint256 _max
   ) external onlyRole(MANAGER_ROLE) returns(bool sufficient) {
     Game storage g = games[_gameNumber];
 
     require(
       g.maxPlayers > 0,
       "Invalid game"
+    );
+    require(
+      g.status == true,
+      "Game already ended"
     );
     require(
       _max > 1,
@@ -574,14 +593,18 @@ contract LottoGame is AccessControl {
    * @dev Defines maximum number of tickets, per unique game player
    */
   function setMaxTicketsPerPlayer(
-    uint _gameNumber,
-    uint _max
+    uint256 _gameNumber,
+    uint256 _max
   ) external onlyRole(MANAGER_ROLE) returns(bool sufficient) {
     Game storage g = games[_gameNumber];
 
     require(
       g.maxPlayers > 0,
       "Invalid game"
+    );
+    require(
+      g.status == true,
+      "Game already ended"
     );
     require(
       _max > 0,
@@ -597,8 +620,8 @@ contract LottoGame is AccessControl {
    * @dev Defines the game fee percentage (can only be lower than original value)
    */
   function setGameFeePercent(
-    uint _gameNumber,
-    uint _percent
+    uint256 _gameNumber,
+    uint256 _percent
   ) external onlyRole(MANAGER_ROLE) returns(bool sufficient) {
     Game storage g = games[_gameNumber];
 
@@ -607,15 +630,17 @@ contract LottoGame is AccessControl {
       "Invalid game"
     );
     require(
+      g.status == true,
+      "Game already ended"
+    );
+    require(
       _percent >= 0,
       "Zero or higher"
     );
-    if (g.status == true) {
-      require(
-        _percent <= g.feePercent,
-        "Can only be decreased after game start"
-      );
-    }
+    require(
+      _percent < g.feePercent,
+      "Can only be decreased after game start"
+    );
 
     g.feePercent = _percent;
 
@@ -626,7 +651,7 @@ contract LottoGame is AccessControl {
    * @dev Defines an address for the game fee
    */
   function setGameFeeAddress(
-    uint _gameNumber,
+    uint256 _gameNumber,
     address _address
   ) external onlyRole(MANAGER_ROLE) returns(bool sufficient) {
     Game storage g = games[_gameNumber];
@@ -634,6 +659,10 @@ contract LottoGame is AccessControl {
     require(
       g.maxPlayers > 0,
       "Invalid game"
+    );
+    require(
+      g.status == true,
+      "Game already ended"
     );
 
     g.feeAddress = _address;
@@ -645,9 +674,9 @@ contract LottoGame is AccessControl {
    * @dev Returns a random seed
    */
   function _randModulus(
-    uint mod
-  ) internal returns(uint) {
-    uint _rand = uint(
+    uint256 mod
+  ) internal returns(uint256) {
+    uint256 _rand = uint256(
       keccak256(
         abi.encodePacked(
           nonce,
