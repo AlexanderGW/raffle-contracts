@@ -10,7 +10,7 @@ const LottoToken = artifacts.require('LottoToken');
 contract('LottoToken', function ([ creator, other ]) {
   const NAME = 'LottoToken';
   const SYMBOL = 'LPT';
-  const TOTAL_SUPPLY = new BN('10000000');
+  const TOTAL_SUPPLY = new BN('1000000000');
 
   beforeEach(async function () {
     this.token = await LottoToken.new(creator, { from: creator });
