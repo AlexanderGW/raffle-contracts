@@ -100,7 +100,7 @@ contract LottoGame is AccessControl {
     /**
      * @dev The game token that players will play for.
      */
-    ERC20 token;
+    IERC20 token;
   }
 
   /**
@@ -349,7 +349,8 @@ contract LottoGame is AccessControl {
     );
 
     // Transfer `_totalCost` of `gameToken` from player, this this contract
-    _safeTransferFrom(g.token, msg.sender, address(this), _totalCost);
+    // _safeTransferFrom(g.token, msg.sender, address(this), _totalCost);
+    g.token.transferFrom(msg.sender, address(this), _totalCost);
 
     // Add total ticket cost to pot
     g.pot += _totalCost;
@@ -403,9 +404,12 @@ contract LottoGame is AccessControl {
       g.status == true,
       "Game already ended"
     );
+
+    uint256 _pot = g.pot;
+    uint256 _balance = g.token.balanceOf(address(this));
     require(
-      g.playerCount > 1,
-      "Need at least two players in game"
+      g.pot <= _balance,
+      "Not enough of game token in reserve"
     );
 
     // Close game
@@ -417,39 +421,25 @@ contract LottoGame is AccessControl {
     uint256 _index = _rand % _total;
     g.winnerAddress = g.tickets[_index];
 
-    // Game total pot
-    uint256 _pot = g.pot;
-
     // Send fees (if applicable)
     if (g.feePercent > 0) {
-      // uint256 _feeTotal = ABDKMathQuad.toUInt(
-      //   ABDKMathQuad.mul(
-      //     ABDKMathQuad.div(
-      //       ABDKMathQuad.fromUInt(g.feePercent),
-      //       ABDKMathQuad.fromUInt(100)
-      //     ),
-      //     ABDKMathQuad.fromUInt(_pot)
-      //   )
-      // );
       uint256 _feeTotal = (g.feePercent / 100) * _pot;
 
       // Transfer game fee from pot
       if (_feeTotal > 0) {
-        g.token.transfer(g.feeAddress, _feeTotal);
+        // g.token.approve(address(this), _feeTotal);
+        g.token.transferFrom(address(this), g.feeAddress, _feeTotal);
+        // g.token.transfer(g.feeAddress, _feeTotal);
 
         // Deduct fee from pot value
-        // _pot = ABDKMathQuad.toUInt(
-        //   ABDKMathQuad.sub(
-        //     ABDKMathQuad.fromUInt(_pot),
-        //     ABDKMathQuad.fromUInt(_feeTotal)
-        //   )
-        // );
         _pot -= _feeTotal;
       }
     }
 
     // Send pot to winner
-    g.token.transfer(g.winnerAddress, _pot);
+    // g.token.approve(address(this), _pot);
+    g.token.transferFrom(address(this), g.winnerAddress, _pot);
+    // g.token.transfer(g.winnerAddress, _pot);
 
     // @todo Trim superfluous game data for gas saving
     totalGamesEnded++;

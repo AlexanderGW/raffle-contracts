@@ -8,9 +8,11 @@ const LottoToken = artifacts.require('LottoToken');
 
 // Start test block
 contract('LottoToken', function ([ creator, other ]) {
+  const decimals = 18;
   const NAME = 'LottoToken';
   const SYMBOL = 'LPT';
-  const TOTAL_SUPPLY = new BN('1000000000');
+  const TOTAL_SUPPLY = web3.utils.toBN('1000000000000000000000000000');
+  //const TOTAL_SUPPLY = web3.utils.toBN('1000000000').mul(web3.utils.toBN(10).pow(decimals));
 
   beforeEach(async function () {
     this.token = await LottoToken.new(creator, { from: creator });

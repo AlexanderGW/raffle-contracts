@@ -13,7 +13,9 @@ contract LottoToken is ERC20, AccessControl {
     _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     _grantRole(ADMIN_ROLE, msg.sender);
 
-    _mint(msg.sender, 1000000000);
+    uint256 _amount = 1000000000 * 10 ** 18;
+
+    _mint(_treasury, _amount);
   }
 
   function mint(address to, uint256 amount) public onlyRole(ADMIN_ROLE) {
