@@ -3,12 +3,13 @@ pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/access/AccessControl.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 import './LottoToken.sol';
 import './Oracle.sol';
 
 contract LottoGame is AccessControl {
+  using SafeMath for uint256;
 
   /**
    * @dev Game record struct
@@ -278,7 +279,7 @@ contract LottoGame is AccessControl {
     g.feePercent = _gameFeePercent;
     g.feeAddress = _gameFeeAddress;
     g.tokenAddress = _gameTokenAddress;
-    g.token = ERC20(_gameTokenAddress);
+    g.token = IERC20(_gameTokenAddress);
 
     // Fire `GameStarted` event
     emit GameStarted(
@@ -315,13 +316,7 @@ contract LottoGame is AccessControl {
     );
 
     // Ensure player has enough tokens to play
-    // uint256 _totalCost = ABDKMathQuad.toUInt(
-    //   ABDKMathQuad.mul(
-    //     ABDKMathQuad.fromUInt(g.ticketPrice),
-    //     ABDKMathQuad.fromUInt(_numberOfTickets)
-    //   )
-    // );
-    uint256 _totalCost = g.ticketPrice * _numberOfTickets;
+    uint256 _totalCost = g.ticketPrice.mul(_numberOfTickets);
     require(
       g.token.allowance(msg.sender, address(this)) >= _totalCost,
       "Insufficent game token allowance"
@@ -417,19 +412,17 @@ contract LottoGame is AccessControl {
 
     // Pick winner
     uint256 _rand = _randModulus(100);
-    uint256 _total = g.tickets.length - 1;
-    uint256 _index = _rand % _total;
+    uint256 _total = g.ticketCount - 1;
+    uint256 _index = (_total == 0) ? 0 : (_rand % _total);
     g.winnerAddress = g.tickets[_index];
 
     // Send fees (if applicable)
     if (g.feePercent > 0) {
-      uint256 _feeTotal = (g.feePercent / 100) * _pot;
+      uint256 _feeTotal = _pot.div(100).mul(g.feePercent);
 
       // Transfer game fee from pot
       if (_feeTotal > 0) {
-        // g.token.approve(address(this), _feeTotal);
-        g.token.transferFrom(address(this), g.feeAddress, _feeTotal);
-        // g.token.transfer(g.feeAddress, _feeTotal);
+        g.token.transfer(g.feeAddress, _feeTotal);
 
         // Deduct fee from pot value
         _pot -= _feeTotal;
@@ -437,9 +430,7 @@ contract LottoGame is AccessControl {
     }
 
     // Send pot to winner
-    // g.token.approve(address(this), _pot);
-    g.token.transferFrom(address(this), g.winnerAddress, _pot);
-    // g.token.transfer(g.winnerAddress, _pot);
+    g.token.transfer(g.winnerAddress, _pot);
 
     // @todo Trim superfluous game data for gas saving
     totalGamesEnded++;
@@ -520,7 +511,7 @@ contract LottoGame is AccessControl {
     );
 
     g.tokenAddress = _token;
-    g.token = ERC20(_token);
+    g.token = IERC20(_token);
 
     return true;
   }

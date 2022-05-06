@@ -109,15 +109,13 @@ contract('LottoGame', function ([ creator, other ]) {
 
     // Check contract balance (pot)
     let contractBalance = await token.balanceOf.call(contract.address, {from: accounts[1]});
-    console.log(contractBalance);
-    // return;
+    // console.log(contractBalance.toString());
+
     expect(contractBalance).to.eql(web3.utils.toBN('10').mul(web3.utils.toBN(10).pow(decimals)));
 
     // Number of game players increases by one
     expected = web3.utils.toBN('1');
     actual = await contract.totalGames({from: accounts[1]});
-    // console.log(actual);
-    // console.log(expected);
     expect(actual).to.be.bignumber.equal(expected);
 
     // Buy second ticket for A1 (should fail)
@@ -152,13 +150,6 @@ contract('LottoGame', function ([ creator, other ]) {
       
       {from: accounts[2]}
     )
-    
-    // Number of game players increases by one, to two
-    // expected = web3.utils.toBN('2');
-    // actual = await contract.getGamePlayerCount.call({from: accounts[2]});
-    // // console.log(actual);
-    // // console.log(expected);
-    // expect(actual).to.eql(expected);
 
     // Approve and buy 1 ticket for A3
     await contract.buyTicket(
@@ -171,13 +162,6 @@ contract('LottoGame', function ([ creator, other ]) {
       
       {from: accounts[3]}
     )
-    
-    // Number of game players increases by one, to three
-    // expected = web3.utils.toBN('3');
-    // actual = await contract.getGamePlayerCount.call({from: accounts[3]});
-    // // console.log(actual);
-    // // console.log(expected);
-    // expect(actual).to.eql(expected);
     
     // Buy 1 ticket for A4 (should fail)
     try {
@@ -201,49 +185,15 @@ contract('LottoGame', function ([ creator, other ]) {
     }
 
 
-    contractBalance = await token.balanceOf.call(contract.address, {from: accounts[1]});
-    console.log(contractBalance);
-    // return;
-    expect(contractBalance).to.eql(web3.utils.toBN('30').mul(web3.utils.toBN(10).pow(decimals)));
-    // web3.utils.toBN('3').mul(web3.utils.toBN(10).pow(decimals))
+    // contractBalance = await token.balanceOf.call(contract.address, {from: accounts[1]});
+    // console.log(contractBalance);
 
-    // Game fee is 2%
-    // expected = web3.utils.toBN('2');
-    // actual = await contract.getGameFeePercent.call({from: accounts[1]});
-    // // console.log(actual);
-    // // console.log(expected);
-    // expect(actual).to.eql(expected);
-
-    // gameFeePercent = 5;
-
-    // Set game fee to 3% (should fail)
-    // try {
-    //   let result = await contract.setGameFeePercent(
-      
-    //     // Game number
-    //     game0Log.gameNumber,
-        
-    //     // Game fee percent
-    //     gameFeePercent,
-        
-    //     {from: accounts[0]}
-    //   );
-    //   // let log = result.logs[0].args
-    //   console.log(result);
-    //   assert.fail('The transaction should have thrown an error');
-    // } catch (err) {
-    //   console.log(err);
-    //   assert.include(
-    //     err.message,
-    //     "Can only be decreased after game start",
-    //     "The error message should contain 'Can only be decreased after game start'"
-    //   );
-    // }
-// console.log(game0Log.gameNumber)
+    // expect(contractBalance).to.eql(web3.utils.toBN('30').mul(web3.utils.toBN(10).pow(decimals)));
 
 
-    let approveAmount3333 = web3.utils.toBN(1000000).mul(web3.utils.toBN(10).pow(decimals));
-    await token.approve(contract.address, approveAmount3333, {from: accounts[0]});
+
+    // let approveAmount3333 = web3.utils.toBN(1000000).mul(web3.utils.toBN(10).pow(decimals));
+    // await token.approve(contract.address, approveAmount3333, {from: accounts[0]});
 
 
     // Choose a random winner
@@ -291,10 +241,10 @@ contract('LottoGame', function ([ creator, other ]) {
 
     maxPlayers = web3.utils.toBN('3');
     maxTicketsPlayer = web3.utils.toBN('2');
-    gameFeePercent = web3.utils.toBN('0');
-    ticketPrice = web3.utils.toBN('2');
-    numberOfTickets = web3.utils.toBN('2');
-    gameFeeAddress = accounts[8];
+    gameFeePercent = web3.utils.toBN('3'); // 1%
+    ticketPrice = web3.utils.toBN('1').mul(web3.utils.toBN(10).pow(decimals));
+    numberOfTickets = web3.utils.toBN('1');
+    gameFeeAddress = accounts[5];
 
     // Start game for LottoToken, exactly two token per entry,
     // max three players, max two tickets per player.
@@ -304,7 +254,7 @@ contract('LottoGame', function ([ creator, other ]) {
       token.address,
 
       // Game fee address
-      accounts[9],
+      gameFeeAddress,
 
       // Game fee percent
       gameFeePercent,
@@ -356,10 +306,35 @@ contract('LottoGame', function ([ creator, other ]) {
       {from: accounts[3]}
     );
 
+    contractBalance = await token.balanceOf.call(accounts[1], {from: accounts[1]});
+    // console.log('after buy: ' + contractBalance.toString());
+    // expect(contractBalance).to.eql(web3.utils.toBN('9989000000000000000000'));
+
+    // contractBalance = await token.balanceOf.call(accounts[1], {from: accounts[2]});
+    // expect(contractBalance).to.eql(web3.utils.toBN('9999000000000000000000'));
+
     await contract.endGame(
       game1StartGameLog.gameNumber,
       {from: accounts[0]}
     );
+
+    // contractBalance = await token.balanceOf.call(contract.address, {from: accounts[1]});
+    // console.log(contractBalance.toString());
+
+    // expect(contractBalance).to.eql(web3.utils.toBN('0').mul(web3.utils.toBN(10).pow(decimals)));
+
+    contractBalance = await token.balanceOf.call(accounts[1], {from: accounts[1]});
+    // console.log('after end: ' + contractBalance.toString());
+    // expect(contractBalance).to.eql(web3.utils.toBN('9991910000000000000000'));
+
+    // contractBalance = await token.balanceOf.call(accounts[2], {from: accounts[2]});
+    // console.log(contractBalance.toString());
+    // expect(contractBalance).to.eql(web3.utils.toBN('10001000000000000000000'));
+
+
+    contractBalance = await token.balanceOf.call(gameFeeAddress, {from: accounts[2]});
+    // console.log('after fee: ' + contractBalance.toString());
+    expect(contractBalance).to.eql(web3.utils.toBN('90000000000000000'));
     
   });
 });
