@@ -6,7 +6,7 @@ const { BN, expectEvent, expectRevert, constants } = require('@openzeppelin/test
 // Load compiled artifacts
 const Oracle = artifacts.require('Oracle');
 const LottoGame = artifacts.require('LottoGame');
-const LottoToken = artifacts.require('LottoToken');
+const GameBobToken = artifacts.require('GameBobToken');
 
 // Start test block
 contract('LottoGame', function ([ creator, other ]) {
@@ -19,7 +19,7 @@ contract('LottoGame', function ([ creator, other ]) {
     accounts = await web3.eth.getAccounts();
     oracle = await Oracle.new({ from: creator });
     contract = await LottoGame.new(oracle.address, { from: creator });
-    token = await LottoToken.new(creator, { from: creator });
+    token = await GameBobToken.new(creator, { from: creator });
     decimals = web3.utils.toBN(18);
   });
 
@@ -33,7 +33,7 @@ contract('LottoGame', function ([ creator, other ]) {
     let numberOfTickets = web3.utils.toBN('10');
     let gameFeeAddress = accounts[8];
 
-    // Start game for LottoToken, exactly one token per entry,
+    // Start game for GameBobToken, exactly one token per entry,
     // max three players, max one ticket per player.
     let game0 = await contract.startGame(
 
@@ -246,7 +246,7 @@ contract('LottoGame', function ([ creator, other ]) {
     numberOfTickets = web3.utils.toBN('1');
     gameFeeAddress = accounts[5];
 
-    // Start game for LottoToken, exactly two token per entry,
+    // Start game for GameBobToken, exactly two token per entry,
     // max three players, max two tickets per player.
     let game1StartGame = await contract.startGame(
 

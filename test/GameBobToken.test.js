@@ -4,18 +4,18 @@ const { expect } = require('chai');
 const { BN, expectEvent, expectRevert, constants } = require('@openzeppelin/test-helpers');
 
 // Load compiled artifacts
-const LottoToken = artifacts.require('LottoToken');
+const GameBobToken = artifacts.require('GameBobToken');
 
 // Start test block
-contract('LottoToken', function ([ creator, other ]) {
+contract('GameBobToken', function ([ creator, other ]) {
   const decimals = 18;
-  const NAME = 'LottoToken';
-  const SYMBOL = 'LPT';
+  const NAME = 'GameBobToken';
+  const SYMBOL = 'GBT';
   const TOTAL_SUPPLY = web3.utils.toBN('1000000000000000000000000000');
   //const TOTAL_SUPPLY = web3.utils.toBN('1000000000').mul(web3.utils.toBN(10).pow(decimals));
 
   beforeEach(async function () {
-    this.token = await LottoToken.new(creator, { from: creator });
+    this.token = await GameBobToken.new(creator, { from: creator });
   });
 
   it('returns a value previously stored', async function () {

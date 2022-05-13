@@ -2,10 +2,11 @@
 pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/access/AccessControl.sol';
-import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
-import './LottoToken.sol';
+import './LottoGame.sol';
+import './GameBobToken.sol';
 import './Oracle.sol';
 
 contract LottoGame is AccessControl {
@@ -74,6 +75,11 @@ contract LottoGame is AccessControl {
     address feeAddress;
 
     /**
+     * @dev Game address for underlying functionality (raffle, lotto, ...)
+     */
+    address gameAddress;
+
+    /**
      * @dev ERC-20 token address for game tickets
      */
     address tokenAddress;
@@ -94,6 +100,11 @@ contract LottoGame is AccessControl {
     address[] playersIndex;
 
     /**
+     * @dev Winner result (i.e. single ticket index for raffle, or multiple numbers for lotto)
+     */
+    uint256[] winnerResult;
+
+    /**
      * @dev List of unique game players
      */
     mapping (address => uint256) players;
@@ -101,7 +112,13 @@ contract LottoGame is AccessControl {
     /**
      * @dev The game token that players will play for.
      */
-    IERC20 token;
+    IERC20Metadata token;
+
+    /**
+     * @dev The game interface.
+     * @todo Modular game interface (lotto, raffle, ...)
+     */
+    // IGB game;
   }
 
   /**
@@ -170,6 +187,7 @@ contract LottoGame is AccessControl {
     address indexed tokenAddress,
     address indexed winnerAddress,
     uint256 indexed gameNumber,
+    uint256[] winnerResult,
     uint256 pot
   );
 
@@ -194,7 +212,7 @@ contract LottoGame is AccessControl {
    * @dev Used by `buyTicket()`
    */
   function _safeTransferFrom(
-    IERC20 token,
+    IERC20Metadata token,
     address sender,
     address recipient,
     uint256 amount
@@ -279,7 +297,7 @@ contract LottoGame is AccessControl {
     g.feePercent = _gameFeePercent;
     g.feeAddress = _gameFeeAddress;
     g.tokenAddress = _gameTokenAddress;
-    g.token = IERC20(_gameTokenAddress);
+    g.token = IERC20Metadata(_gameTokenAddress);
 
     // Fire `GameStarted` event
     emit GameStarted(
@@ -344,8 +362,13 @@ contract LottoGame is AccessControl {
     );
 
     // Transfer `_totalCost` of `gameToken` from player, this this contract
-    // _safeTransferFrom(g.token, msg.sender, address(this), _totalCost);
-    g.token.transferFrom(msg.sender, address(this), _totalCost);
+    // g.token.transferFrom(msg.sender, address(this), _totalCost);
+    _safeTransferFrom(
+      g.token,
+      msg.sender,
+      address(this),
+      _totalCost
+    );
 
     // Add total ticket cost to pot
     g.pot += _totalCost;
@@ -414,6 +437,11 @@ contract LottoGame is AccessControl {
     uint256 _rand = _randModulus(100);
     uint256 _total = g.ticketCount - 1;
     uint256 _index = (_total == 0) ? 0 : (_rand % _total);
+
+    // Store winner result index
+    g.winnerResult.push(_index);
+
+    // Store winner address index
     g.winnerAddress = g.tickets[_index];
 
     // Send fees (if applicable)
@@ -440,6 +468,7 @@ contract LottoGame is AccessControl {
       g.tokenAddress,
       g.winnerAddress,
       g.number,
+      g.winnerResult,
       _pot
     );
   }
@@ -461,7 +490,8 @@ contract LottoGame is AccessControl {
     uint256 feePercent,
     address feeAddress,
     address tokenAddress,
-    address winnerAddress
+    address winnerAddress,
+    uint256[] memory winnerResult
   ) {
     Game storage g = games[_gameNumber];
 
@@ -481,7 +511,8 @@ contract LottoGame is AccessControl {
       g.feePercent,
       g.feeAddress,
       g.tokenAddress,
-      g.winnerAddress
+      g.winnerAddress,
+      g.winnerResult
     );
   }
 
@@ -511,7 +542,7 @@ contract LottoGame is AccessControl {
     );
 
     g.tokenAddress = _token;
-    g.token = IERC20(_token);
+    g.token = IERC20Metadata(_token);
 
     return true;
   }
