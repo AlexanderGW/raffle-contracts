@@ -5,11 +5,9 @@ import '@openzeppelin/contracts/access/AccessControl.sol';
 import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
-import './LottoGame.sol';
-import './GameBobToken.sol';
 import './Oracle.sol';
 
-contract LottoGame is AccessControl {
+contract GameMaster is AccessControl {
   using SafeMath for uint256;
 
   /**
@@ -18,7 +16,7 @@ contract LottoGame is AccessControl {
   struct Game {
 
     /**
-     * @dev Game state
+     * @dev Is game running?
      */
     bool status;
 
