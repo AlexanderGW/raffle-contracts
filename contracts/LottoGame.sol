@@ -18,7 +18,7 @@ contract LottoGame is AccessControl {
   struct Game {
 
     /**
-     * @dev Is game running?
+     * @dev Game state
      */
     bool status;
 
@@ -70,6 +70,11 @@ contract LottoGame is AccessControl {
     // address ownerAddress;
 
     /**
+     * @dev Winner result (i.e. single ticket index for raffle, or multiple numbers for lotto)
+     */
+    uint256[] winnerResult;
+
+    /**
      * @dev Destination for the game fee tokens
      */
     address feeAddress;
@@ -100,11 +105,6 @@ contract LottoGame is AccessControl {
     address[] playersIndex;
 
     /**
-     * @dev Winner result (i.e. single ticket index for raffle, or multiple numbers for lotto)
-     */
-    uint256[] winnerResult;
-
-    /**
      * @dev List of unique game players
      */
     mapping (address => uint256) players;
@@ -122,7 +122,7 @@ contract LottoGame is AccessControl {
   }
 
   /**
-   * @dev Storage for all games (Game structs)
+   * @dev Storage for all games (`Game` structs)
    */
   mapping (uint256 => Game) games;
 
@@ -142,7 +142,7 @@ contract LottoGame is AccessControl {
   uint256 public totalGamesEnded;
 
   /**
-   * @dev Randomness oracle, for selecting a winner on `endGame()`
+   * @dev Randomness oracle, for selecting winning number(s) on `endGame()`
    */
   Oracle oracle;
 
