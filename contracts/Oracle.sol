@@ -19,7 +19,11 @@ contract Oracle {
   }
 
   function feedRandomness(uint _rand) external {
-    require(msg.sender == owner);
+    require(
+      msg.sender == owner,
+      "Owner only"
+    );
+    
     rand = uint(
       keccak256(
         abi.encodePacked(
