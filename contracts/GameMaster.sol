@@ -169,6 +169,13 @@ contract GameMaster is AccessControl {
   );
 
   /**
+   * @dev Emitted when a game's parameters are changed
+   */
+  event GameChanged(
+    uint256 indexed gameNumber
+  );
+
+  /**
    * @dev Emitted when a player buys ticket(s)
    */
   event TicketBought(
@@ -515,19 +522,12 @@ contract GameMaster is AccessControl {
   }
 
   /**
-   * @dev Return `totalGamesEnded`, the total number of completed games
-   */
-  // function getTotalGameCount() external view returns(uint256) {
-  //   return totalGamesEnded;
-  // }
-
-  /**
    * @dev Define new ERC20 `gameToken` with provided `_token`
    */
   function setGameToken(
     uint256 _gameNumber,
     address _token
-  ) external onlyRole(MANAGER_ROLE) returns(bool sufficient) {
+  ) external onlyRole(MANAGER_ROLE) {
     Game storage g = games[_gameNumber];
 
     require(
@@ -542,7 +542,10 @@ contract GameMaster is AccessControl {
     g.tokenAddress = _token;
     g.token = IERC20Metadata(_token);
 
-    return true;
+    // Fire `GameChanged` event
+    emit GameChanged(
+      g.number
+    );
   }
 
   /**
@@ -551,7 +554,7 @@ contract GameMaster is AccessControl {
   function setTicketPrice(
     uint256 _gameNumber,
     uint256 _price
-  ) external onlyRole(MANAGER_ROLE) returns(bool sufficient) {
+  ) external onlyRole(MANAGER_ROLE) {
     Game storage g = games[_gameNumber];
 
     require(
@@ -569,7 +572,10 @@ contract GameMaster is AccessControl {
 
     g.ticketPrice = _price;
 
-    return true;
+    // Fire `GameChanged` event
+    emit GameChanged(
+      g.number
+    );
   }
 
   /**
@@ -578,7 +584,7 @@ contract GameMaster is AccessControl {
   function setMaxPlayers(
     uint256 _gameNumber,
     uint256 _max
-  ) external onlyRole(MANAGER_ROLE) returns(bool sufficient) {
+  ) external onlyRole(MANAGER_ROLE) {
     Game storage g = games[_gameNumber];
 
     require(
@@ -596,7 +602,10 @@ contract GameMaster is AccessControl {
 
     g.maxPlayers = _max;
 
-    return true;
+    // Fire `GameChanged` event
+    emit GameChanged(
+      g.number
+    );
   }
 
   /**
@@ -605,7 +614,7 @@ contract GameMaster is AccessControl {
   function setMaxTicketsPerPlayer(
     uint256 _gameNumber,
     uint256 _max
-  ) external onlyRole(MANAGER_ROLE) returns(bool sufficient) {
+  ) external onlyRole(MANAGER_ROLE) {
     Game storage g = games[_gameNumber];
 
     require(
@@ -623,7 +632,10 @@ contract GameMaster is AccessControl {
 
     g.maxTicketsPlayer = _max;
 
-    return true;
+    // Fire `GameChanged` event
+    emit GameChanged(
+      g.number
+    );
   }
 
   /**
@@ -632,7 +644,7 @@ contract GameMaster is AccessControl {
   function setGameFeePercent(
     uint256 _gameNumber,
     uint256 _percent
-  ) external onlyRole(MANAGER_ROLE) returns(bool sufficient) {
+  ) external onlyRole(MANAGER_ROLE) {
     Game storage g = games[_gameNumber];
 
     require(
@@ -654,7 +666,10 @@ contract GameMaster is AccessControl {
 
     g.feePercent = _percent;
 
-    return true;
+    // Fire `GameChanged` event
+    emit GameChanged(
+      g.number
+    );
   }
 
   /**
@@ -663,7 +678,7 @@ contract GameMaster is AccessControl {
   function setGameFeeAddress(
     uint256 _gameNumber,
     address _address
-  ) external onlyRole(MANAGER_ROLE) returns(bool sufficient) {
+  ) external onlyRole(MANAGER_ROLE) {
     Game storage g = games[_gameNumber];
 
     require(
@@ -677,7 +692,10 @@ contract GameMaster is AccessControl {
 
     g.feeAddress = _address;
 
-    return true;
+    // Fire `GameChanged` event
+    emit GameChanged(
+      g.number
+    );
   }
 
   /**
