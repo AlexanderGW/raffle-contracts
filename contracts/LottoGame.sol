@@ -5,8 +5,6 @@ import '@openzeppelin/contracts/access/AccessControl.sol';
 import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
-import './LottoGame.sol';
-import './GameBobToken.sol';
 import './Oracle.sol';
 
 contract LottoGame is AccessControl {
