@@ -3,11 +3,11 @@ pragma solidity ^0.8.0;
 
 contract Oracle {
   address owner;
-  uint public rand;
+  uint256 public rand;
 
   constructor() {
     owner = msg.sender;
-    rand = uint(
+    rand = uint256(
       keccak256(
         abi.encodePacked(
           block.timestamp,
@@ -18,13 +18,13 @@ contract Oracle {
     );
   }
 
-  function feedRandomness(uint _rand) external {
+  function feedRandomness(uint256 _rand) external {
     require(
       msg.sender == owner,
       "Owner only"
     );
     
-    rand = uint(
+    rand = uint256(
       keccak256(
         abi.encodePacked(
           _rand,
