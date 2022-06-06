@@ -3,28 +3,51 @@ const { expect, assert } = require('chai');
 // Import utilities from Test Helpers
 const { BN, expectEvent, expectRevert, constants } = require('@openzeppelin/test-helpers');
 
+// TODO: Allow public to run games in wrapper function and fixed fee (on top of original fee system that user can control)
+// TODO: Community run games, with pausing system
+// TODO: Game cancel/reversal?
+
 // Load compiled artifacts
 const Oracle = artifacts.require('Oracle');
 const GameMaster = artifacts.require('GameMaster');
 const GameBobToken = artifacts.require('GameBobToken');
+const GameTrophy = artifacts.require('GameTrophy');
 
 // Start test block
 contract('GameMaster', function ([ creator, other ]) {
   let accounts;
   let oracle;
-  let token;
   let contract;
+  let token;
+  let nft;
 
   before(async function () {
     accounts = await web3.eth.getAccounts();
     oracle = await Oracle.new({ from: creator });
     contract = await GameMaster.new(oracle.address, { from: creator });
     token = await GameBobToken.new(creator, { from: creator });
+    nft = await GameTrophy.new({ from: creator });
     decimals = web3.utils.toBN(18);
   });
 
   it('should allow accounts to buy tickets', async function () {
     let expected, actual;
+
+    let nft0 = await nft.awardItem(
+      accounts[0],
+      'http://localhost:3200/nft0.jpg',
+      {from: accounts[0]}
+    );
+    // console.log(nft0.logs[0].args.tokenId);
+    // return;
+
+    let nft1 = await nft.awardItem(
+      accounts[0],
+      'http://localhost:3200/nft1.jpg',
+      {from: accounts[0]}
+    );
+    // console.log(nft1.logs[0].args.tokenId);
+    // return;
 
     let maxPlayers = web3.utils.toBN('3');
     let maxTicketsPlayer = web3.utils.toBN('10');
@@ -58,8 +81,8 @@ contract('GameMaster', function ([ creator, other ]) {
       {from: accounts[0]}
     )
 
-    // console.log(game0.logs[0].args.gameNumber);
     let game0Log = game0.logs[0].args;
+    // console.log(game0Log);
     expect(game0Log.tokenAddress).to.eql(token.address);
     expect(game0Log.feeAddress).to.eql(gameFeeAddress);
     expect(game0Log.gameNumber).to.be.bignumber.equal('0');
@@ -68,7 +91,7 @@ contract('GameMaster', function ([ creator, other ]) {
     expect(game0Log.maxPlayers).to.be.bignumber.equal(maxPlayers);
     expect(game0Log.maxTicketsPlayer).to.be.bignumber.equal(maxTicketsPlayer);
 
-    // Seed accounts for testing
+    // Seed accounts and set approvals for testing
     await token.approve(
       accounts[0],
       web3.utils.toBN(1000000).mul(web3.utils.toBN(10).pow(decimals)),
@@ -89,6 +112,120 @@ contract('GameMaster', function ([ creator, other ]) {
     await token.approve(contract.address, approveAmount100K, {from: accounts[3]});
     await token.approve(contract.address, approveAmount100K, {from: accounts[4]});
 
+    await nft.approve(contract.address, nft0.logs[0].args.tokenId, {from: accounts[0]});
+    await nft.approve(contract.address, nft1.logs[0].args.tokenId, {from: accounts[0]});
+
+    // Add additional game pot ERC20 asset
+    let game0Pot1AssetValue = 5;
+    let game0AddPotAsset0 = await contract.addGamePotERC20Asset(
+
+      // Game number
+      game0Log.gameNumber,
+
+      // Asset value
+      web3.utils.toBN(game0Pot1AssetValue).mul(web3.utils.toBN(10).pow(decimals)),
+
+      // Asset address
+      token.address,
+
+      {from: accounts[0]}
+    )
+
+    let game0AddPotAsset0Log = game0AddPotAsset0.logs[0].args;
+    // console.log(game0AddPotAsset0Log);
+    // return;
+
+    // Number of games increases by one
+    expected = web3.utils.toBN('1');
+    actual = await contract.totalGames({from: accounts[1]});
+    expect(actual).to.be.bignumber.equal(expected);
+
+
+    // Add first game pot ERC721 asset
+    let game0AddPotAsset1 = await contract.addGamePotERC721Asset(
+
+      // Game number
+      game0Log.gameNumber,
+
+      // Asset value
+      nft0.logs[0].args.tokenId,
+
+      // Asset address
+      nft.address,
+
+      {from: accounts[0]}
+    )
+
+    // let game0AddPotAsset1Log = game0AddPotAsset1.logs[0].args;
+    // console.log(game0AddPotAsset1Log);
+    // return;
+
+
+
+    // Add second game pot ERC721 asset
+    let game0AddPotAsset2 = await contract.addGamePotERC721Asset(
+
+      // Game number
+      game0Log.gameNumber,
+
+      // Asset value
+      nft1.logs[0].args.tokenId,
+
+      // Asset address
+      nft.address,
+
+      {from: accounts[0]}
+    )
+
+    // let game0AddPotAsset2Log = game0AddPotAsset2.logs[0].args;
+    // console.log(game0AddPotAsset2Log);
+    // return;
+
+    // Check NFT one is owned by contract
+    let nft1OwnerAfterAdding = await nft.ownerOf.call(
+      nft1.logs[0].args.tokenId,
+      {from: accounts[0]}
+    );
+    // console.log(nft1OwnerAfterAdding);
+    expect(nft1OwnerAfterAdding).to.be.bignumber.equal(contract.address);
+
+    // Remove NFT one from game, back to A0
+    let game0AddPotAsset2Remove = await contract.removeGamePotERC721Asset(
+
+      // Game number
+      game0Log.gameNumber,
+
+      // Asset value
+      nft1.logs[0].args.tokenId,
+
+      // Asset address
+      nft.address,
+
+      {from: accounts[0]}
+    )
+
+    // Check NFT one is back to A0 owner
+    let nft1OwnerAfterRemoval = await nft.ownerOf.call(
+      nft1.logs[0].args.tokenId,
+      {from: accounts[0]}
+    );
+    // console.log(nft0Owner);
+    expect(nft1OwnerAfterRemoval).to.be.bignumber.equal(accounts[0]);
+
+
+    // Check game zero pot states - for removal of game pot asset
+    let game0State = await contract.getGameState.call(
+      game0Log.gameNumber,
+      {from: accounts[1]}
+    );
+
+    // Check gamepot asset three, is now null
+    expect(game0State.pot[3].assetAddress).to.eql('0x0000000000000000000000000000000000000000');
+    // console.log(game0State.pot);
+    // return;
+
+
+
     // Approve and buy 1 ticket for A1
     let game0A1Ticket = await contract.buyTicket(
       
@@ -102,6 +239,7 @@ contract('GameMaster', function ([ creator, other ]) {
     )
 
     let game0A1TicketLog = game0A1Ticket.logs[0].args;
+    // console.log(game0A1TicketLog);
     expect(game0A1TicketLog.playerAddress).to.be.bignumber.equal(accounts[1]);
     expect(game0A1TicketLog.gameNumber).to.be.bignumber.equal('0');
     expect(game0A1TicketLog.playerCount).to.be.bignumber.equal('1');
@@ -111,12 +249,9 @@ contract('GameMaster', function ([ creator, other ]) {
     let contractBalance = await token.balanceOf.call(contract.address, {from: accounts[1]});
     // console.log(contractBalance.toString());
 
-    expect(contractBalance).to.eql(web3.utils.toBN('10').mul(web3.utils.toBN(10).pow(decimals)));
-
-    // Number of game players increases by one
-    expected = web3.utils.toBN('1');
-    actual = await contract.totalGames({from: accounts[1]});
-    expect(actual).to.be.bignumber.equal(expected);
+    expect(contractBalance).to.eql(web3.utils.toBN(
+      10 + game0Pot1AssetValue
+    ).mul(web3.utils.toBN(10).pow(decimals)));
 
     // Buy second ticket for A1 (should fail)
     try {
@@ -184,33 +319,83 @@ contract('GameMaster', function ([ creator, other ]) {
       );
     }
 
+    // Store current balances for winner game pot receipt checks
+    let playersWithBalance = [];
+    for (let i = 0; i < accounts.length; i++) {
+      playersWithBalance[accounts[i]] = await token.balanceOf.call(accounts[i], {from: accounts[i]});
+    }
 
-    // contractBalance = await token.balanceOf.call(contract.address, {from: accounts[1]});
-    // console.log(contractBalance);
-
-    // expect(contractBalance).to.eql(web3.utils.toBN('30').mul(web3.utils.toBN(10).pow(decimals)));
-
-
-
-    // let approveAmount3333 = web3.utils.toBN(1000000).mul(web3.utils.toBN(10).pow(decimals));
-    // await token.approve(contract.address, approveAmount3333, {from: accounts[0]});
+    // Check active game list
+    let activeGamesBeforeEnd = await contract.getActiveGames.call(10, {from: accounts[1]});
+    // console.log(activeGamesBeforeEnd);
+    activeGamesBeforeEnd.forEach((ticket, index) => {
+      console.log('activeGamesBeforeEnd: ' + index + ': ' + ticket)
+    });
+    // return;
 
 
-    // Choose a random winner
+
+
+    // End game zero. Choose a random winner
     let game0EndGame = await contract.endGame(
       
+      // Game number
       game0Log.gameNumber,
       
       {from: accounts[0]}
     );
 
     let game0EndGameLog = game0EndGame.logs[0].args;
+    // console.log(game0EndGameLog);
     expect(game0EndGameLog.tokenAddress).to.be.bignumber.equal(token.address);
     // expect(game0EndGameLog.winnerAddress).to.eql(accounts[1]);
     expect(game0EndGameLog.gameNumber).to.be.bignumber.equal('0');
-    expect(game0EndGameLog.pot).to.be.bignumber.equal(web3.utils.toBN((ticketPrice * numberOfTickets) * 3));
 
+    expect(game0EndGameLog.pot[0].value).to.be.bignumber.equal(web3.utils.toBN((ticketPrice * numberOfTickets) * 3));
+    expect(game0EndGameLog.pot[0].assetType).to.be.bignumber.equal('0');
+    expect(game0EndGameLog.pot[0].assetAddress).to.eql(token.address);
 
+    expect(game0EndGameLog.pot[1].value).to.be.bignumber.equal(web3.utils.toBN(game0Pot1AssetValue).mul(web3.utils.toBN(10).pow(decimals)));
+    expect(game0EndGameLog.pot[1].assetType).to.be.bignumber.equal('0');
+    expect(game0EndGameLog.pot[1].assetAddress).to.eql(token.address);
+
+    expect(game0EndGameLog.pot[2].value).to.be.bignumber.equal(nft0.logs[0].args.tokenId);
+    expect(game0EndGameLog.pot[2].assetType).to.be.bignumber.equal('1');
+    expect(game0EndGameLog.pot[2].assetAddress).to.eql(nft.address);
+
+    // Number of games ended increases by one
+    expected = web3.utils.toBN('1');
+    actual = await contract.totalGamesEnded({from: accounts[1]});
+    expect(actual).to.be.bignumber.equal(expected);
+
+    // Check winner is owner of pot two NFT
+    let nft0Owner = await nft.ownerOf.call(
+      nft0.logs[0].args.tokenId,
+      {from: accounts[0]}
+    );
+    // console.log(nft0Owner);
+    expect(nft0Owner).to.be.bignumber.equal(game0EndGameLog.winnerAddress);
+
+    // Check winner token balance from pot zero and one
+    let game0WinnerBalance = await token.balanceOf.call(game0EndGameLog.winnerAddress, {from: accounts[0]});
+
+    let winnerBalanceBeforeGameEnd = web3.utils.toBN(playersWithBalance[game0EndGameLog.winnerAddress]).div(web3.utils.toBN(10).pow(decimals)).toNumber();
+    // console.log('winnerBalanceBeforeGameEnd: ' + winnerBalanceBeforeGameEnd);
+
+    let winnerBalanceAfterGameEnd = web3.utils.toBN(game0WinnerBalance).div(web3.utils.toBN(10).pow(decimals)).toNumber();
+    // console.log(winnerBalanceAfterGameEnd);
+
+    // console.log(winnerBalanceAfterGameEnd);
+    // console.log(ticketPrice.div(web3.utils.toBN(10).pow(decimals)).toNumber());
+    // console.log(numberOfTickets.toNumber() * 3);
+    // console.log(game0Pot1AssetValue);
+
+    // Deduct all ERC20 pots to match previous account balance (this game has no fee to calc)
+    expect(winnerBalanceBeforeGameEnd).to.eql(
+      winnerBalanceAfterGameEnd
+      - ((ticketPrice.div(web3.utils.toBN(10).pow(decimals)).toNumber() * numberOfTickets.toNumber()) * 3) // Tickets (pot zero)
+      - game0Pot1AssetValue // Additional game pot asset (pot two)
+    );
 
     // Check game zero states
     game0State = await contract.getGameState.call(
@@ -218,9 +403,9 @@ contract('GameMaster', function ([ creator, other ]) {
       {from: accounts[1]}
     );
 
-    expect(game0State.status).to.eql(false);
     // Needs fee offset calc
-    // expect(game0State.pot).to.be.bignumber.equal(game0EndGameLog.pot);
+    expect(game0State.status).to.be.bignumber.equal('0');
+    
     expect(game0State.playerCount).to.be.bignumber.equal(web3.utils.toBN('3'));
     // Each player bought one ticket each
     expect(game0State.ticketCount).to.be.bignumber.equal(web3.utils.toBN('30'));
@@ -229,14 +414,44 @@ contract('GameMaster', function ([ creator, other ]) {
     expect(game0State.ticketPrice).to.be.bignumber.equal(ticketPrice);
     expect(game0State.feeAddress).to.be.bignumber.equal(gameFeeAddress);
     expect(game0State.tokenAddress).to.be.bignumber.equal(token.address);
-    // expect(game0State.winnerAddress).to.be.bignumber.equal(token.address);
 
+    expect(game0State.pot[0].value).to.be.bignumber.equal(web3.utils.toBN((ticketPrice * numberOfTickets) * 3));
+    expect(game0State.pot[0].assetType).to.be.bignumber.equal('0');
+    expect(game0State.pot[0].assetAddress).to.eql(token.address);
 
-    // Get last game winner
-    // actual = await contract.getGameLastWinner.call({from: accounts[1]});
-    // expect(actual).to.be.properAddress;
+    expect(game0State.pot[1].value).to.be.bignumber.equal(web3.utils.toBN(game0Pot1AssetValue).mul(web3.utils.toBN(10).pow(decimals)));
+    expect(game0State.pot[1].assetType).to.be.bignumber.equal('0');
+    expect(game0State.pot[1].assetAddress).to.eql(token.address);
 
-    // Game count is one
+    expect(game0State.pot[2].value).to.be.bignumber.equal(nft0.logs[0].args.tokenId);
+    expect(game0State.pot[2].assetType).to.be.bignumber.equal('1');
+    expect(game0State.pot[2].assetAddress).to.eql(nft.address);
+
+    // Check all game zero player states
+    let game0PlayerState = [];
+    let game0TicketIndex = 0;
+    for (let i = 0; i < accounts.length; i++) {
+
+      // Only need to check the players of `buyTicket` above
+      if (i < 1 || i > 3) continue;
+
+      // console.log(i + ': ' + accounts[i]);
+
+      game0PlayerState = await contract.getGamePlayerState.call(
+        game0EndGameLog.gameNumber,
+        accounts[i],
+        {from: accounts[i]}
+      );
+      // console.log(game0PlayerState.length);
+
+      expect(game0PlayerState.length).to.eql(numberOfTickets.toNumber());
+
+      for (let j = 0; j < game0PlayerState.length; j++) {
+        // console.log(j + ': ' + game0PlayerState[j].toNumber());
+        expect(game0PlayerState[j].toNumber()).to.eql(game0TicketIndex);
+        game0TicketIndex++;
+      }
+    }
 
 
     maxPlayers = web3.utils.toBN('3');
@@ -313,6 +528,15 @@ contract('GameMaster', function ([ creator, other ]) {
     // contractBalance = await token.balanceOf.call(accounts[1], {from: accounts[2]});
     // expect(contractBalance).to.eql(web3.utils.toBN('9999000000000000000000'));
 
+
+    // Check active game list
+    let activeGamesBeforeGame1End = await contract.getActiveGames.call(2, {from: accounts[1]});
+    // console.log(activeGamesBeforeGame1End);
+    activeGamesBeforeGame1End.forEach((ticket, index) => {
+      console.log('activeGamesBeforeGame1End: ' + index + ': ' + ticket)
+    });
+    // return;
+
     await contract.endGame(
       game1StartGameLog.gameNumber,
       {from: accounts[0]}
@@ -330,7 +554,6 @@ contract('GameMaster', function ([ creator, other ]) {
     // contractBalance = await token.balanceOf.call(accounts[2], {from: accounts[2]});
     // console.log(contractBalance.toString());
     // expect(contractBalance).to.eql(web3.utils.toBN('10001000000000000000000'));
-
 
     contractBalance = await token.balanceOf.call(gameFeeAddress, {from: accounts[2]});
     // console.log('after fee: ' + contractBalance.toString());
