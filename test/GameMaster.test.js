@@ -384,8 +384,6 @@ contract('GameMaster', function ([ creator, other ]) {
 
     let winnerBalanceAfterGameEnd = web3.utils.toBN(game0WinnerBalance).div(web3.utils.toBN(10).pow(decimals)).toNumber();
     // console.log(winnerBalanceAfterGameEnd);
-
-    // console.log(winnerBalanceAfterGameEnd);
     // console.log(ticketPrice.div(web3.utils.toBN(10).pow(decimals)).toNumber());
     // console.log(numberOfTickets.toNumber() * 3);
     // console.log(game0Pot1AssetValue);
@@ -522,11 +520,6 @@ contract('GameMaster', function ([ creator, other ]) {
     );
 
     contractBalance = await token.balanceOf.call(accounts[1], {from: accounts[1]});
-    // console.log('after buy: ' + contractBalance.toString());
-    // expect(contractBalance).to.eql(web3.utils.toBN('9989000000000000000000'));
-
-    // contractBalance = await token.balanceOf.call(accounts[1], {from: accounts[2]});
-    // expect(contractBalance).to.eql(web3.utils.toBN('9999000000000000000000'));
 
 
     // Check active game list
@@ -547,7 +540,7 @@ contract('GameMaster', function ([ creator, other ]) {
 
     // expect(contractBalance).to.eql(web3.utils.toBN('0').mul(web3.utils.toBN(10).pow(decimals)));
 
-    contractBalance = await token.balanceOf.call(accounts[1], {from: accounts[1]});
+    // contractBalance = await token.balanceOf.call(accounts[1], {from: accounts[1]});
     // console.log('after end: ' + contractBalance.toString());
     // expect(contractBalance).to.eql(web3.utils.toBN('9991910000000000000000'));
 
