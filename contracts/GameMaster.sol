@@ -698,11 +698,9 @@ contract GameMaster is AccessControl, ERC721Holder {
         if (_assetType == 0) {
           IERC20Metadata _assetInterface = IERC20Metadata(_assetAddress);
 
-          _safeTransferFrom(
-            _assetInterface,
-            address(this),
+          _assetInterface.transfer(
             msg.sender,
-            uint256(_assetValue)
+            uint256(pot.value)
           );
         }
 
