@@ -517,7 +517,7 @@ contract GameMaster is AccessControl, ERC721Holder {
       // Add pot record, for event record
       _pots[_i] = g.pot[_i];
 
-      // Handled below
+      // Handled outside of this for loop
       if (_i == 0) continue;
 
       // ERC20
