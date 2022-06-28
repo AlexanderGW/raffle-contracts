@@ -115,11 +115,6 @@ contract GameMaster is AccessControl, ERC721Holder {
     address feeAddress;
 
     /**
-     * @dev ERC-20 token address for game tickets
-     */
-    address tokenAddress;
-
-    /**
      * @dev Address of the game winner
      */
     address winnerAddress;
@@ -185,7 +180,7 @@ contract GameMaster is AccessControl, ERC721Holder {
    * @dev Emitted when a game is started
    */
   event GameStarted(
-    address indexed tokenAddress,
+    address indexed ticketTokenAddress,
     address indexed feeAddress,
     uint32 indexed gameNumber,
     uint8 feePercent,
@@ -215,7 +210,7 @@ contract GameMaster is AccessControl, ERC721Holder {
    * @dev Emitted when a game ends, and a player has won
    */
   event GameEnded(
-    address indexed tokenAddress,
+    address indexed ticketTokenAddress,
     address indexed winnerAddress,
     uint32 indexed gameNumber,
     uint32[] winnerResult,
@@ -329,7 +324,6 @@ contract GameMaster is AccessControl, ERC721Holder {
     g.ticketPrice = _ticketPrice;
     g.feePercent = _gameFeePercent;
     g.feeAddress = _gameFeeAddress;
-    g.tokenAddress = _gameTokenAddress;
     g.potCount = 1;
 
     // Create initial game token pot, as index zero
@@ -347,7 +341,7 @@ contract GameMaster is AccessControl, ERC721Holder {
 
     // Fire `GameStarted` event
     emit GameStarted(
-      g.tokenAddress,
+      _gameTokenAddress,
       g.feeAddress,
       g.number,
       g.feePercent,
@@ -358,7 +352,7 @@ contract GameMaster is AccessControl, ERC721Holder {
   }
 // TODO: Free ticket support
   /**
-   * @dev Allow a player to buy Nth tickets in `_gameNumber`, at predefined `g.ticketPrice` of `g.tokenAddress`
+   * @dev Allow a player to buy Nth tickets in `_gameNumber`, at predefined `g.ticketPrice` of `g.pot[0].assetAddress`
    */
   function buyTicket(
     uint32 _gameNumber,
@@ -379,7 +373,7 @@ contract GameMaster is AccessControl, ERC721Holder {
       "Buy at least 1 ticket"
     );
     
-    IERC20Metadata _token = IERC20Metadata(g.tokenAddress);
+    IERC20Metadata _token = IERC20Metadata(g.pot[0].assetAddress);
 
     // Ensure player has enough tokens to play
     uint256 _totalCost = g.ticketPrice.mul(_numberOfTickets);
@@ -470,7 +464,7 @@ contract GameMaster is AccessControl, ERC721Holder {
       "Game already ended"
     );
     
-    IERC20Metadata _token = IERC20Metadata(g.tokenAddress);
+    IERC20Metadata _token = IERC20Metadata(g.pot[0].assetAddress);
 
     // Check contract holds enough balance in game token, to send to winner
     uint256 _ticketPot = g.pot[0].value;
@@ -555,7 +549,7 @@ contract GameMaster is AccessControl, ERC721Holder {
 
     // Fire `GameEnded` event
     emit GameEnded(
-      g.tokenAddress,
+      g.pot[0].assetAddress,
       g.winnerAddress,
       g.number,
       g.winnerResult,
@@ -802,7 +796,6 @@ contract GameMaster is AccessControl, ERC721Holder {
     uint128 ticketPrice,
     uint8 feePercent,
     address feeAddress,
-    address tokenAddress,
     address winnerAddress,
     uint32[] memory winnerResult
   ) {
@@ -828,7 +821,6 @@ contract GameMaster is AccessControl, ERC721Holder {
       g.ticketPrice,
       g.feePercent,
       g.feeAddress,
-      g.tokenAddress,
       g.winnerAddress,
       g.winnerResult
     );
@@ -846,7 +838,6 @@ contract GameMaster is AccessControl, ERC721Holder {
   //   uint128 ticketPrice,
   //   uint8 feePercent,
   //   address feeAddress,
-  //   address tokenAddress,
   //   address winnerAddress,
   //   uint32[] memory winnerResult
   // ) {
@@ -872,7 +863,6 @@ contract GameMaster is AccessControl, ERC721Holder {
   //     g.ticketPrice,
   //     g.feePercent,
   //     g.feeAddress,
-  //     g.tokenAddress,
   //     g.winnerAddress,
   //     g.winnerResult
   //   );
@@ -929,7 +919,7 @@ contract GameMaster is AccessControl, ERC721Holder {
   //     "Can only be changed if 0 players"
   //   );
 
-  //   g.tokenAddress = _token;
+  //   g.pot[0].assetAddress = _token;
 
   //   // Fire `GameChanged` event
   //   emit GameChanged(

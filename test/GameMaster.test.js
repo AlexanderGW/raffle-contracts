@@ -83,7 +83,7 @@ contract('GameMaster', function ([ creator, other ]) {
 
     let game0Log = game0.logs[0].args;
     // console.log(game0Log);
-    expect(game0Log.tokenAddress).to.eql(token.address);
+    expect(game0Log.ticketTokenAddress).to.eql(token.address);
     expect(game0Log.feeAddress).to.eql(gameFeeAddress);
     expect(game0Log.gameNumber).to.be.bignumber.equal('0');
     expect(game0Log.feePercent).to.be.bignumber.equal(gameFeePercent);
@@ -329,7 +329,7 @@ contract('GameMaster', function ([ creator, other ]) {
     let activeGamesBeforeEnd = await contract.getActiveGames.call(10, {from: accounts[1]});
     // console.log(activeGamesBeforeEnd);
     activeGamesBeforeEnd.forEach((ticket, index) => {
-      console.log('activeGamesBeforeEnd: ' + index + ': ' + ticket)
+      // console.log('activeGamesBeforeEnd: ' + index + ': ' + ticket)
     });
     // return;
 
@@ -347,7 +347,6 @@ contract('GameMaster', function ([ creator, other ]) {
 
     let game0EndGameLog = game0EndGame.logs[0].args;
     // console.log(game0EndGameLog);
-    expect(game0EndGameLog.tokenAddress).to.be.bignumber.equal(token.address);
     // expect(game0EndGameLog.winnerAddress).to.eql(accounts[1]);
     expect(game0EndGameLog.gameNumber).to.be.bignumber.equal('0');
 
@@ -411,7 +410,6 @@ contract('GameMaster', function ([ creator, other ]) {
     expect(game0State.maxTicketsPlayer).to.be.bignumber.equal(maxTicketsPlayer);
     expect(game0State.ticketPrice).to.be.bignumber.equal(ticketPrice);
     expect(game0State.feeAddress).to.be.bignumber.equal(gameFeeAddress);
-    expect(game0State.tokenAddress).to.be.bignumber.equal(token.address);
 
     expect(game0State.pot[0].value).to.be.bignumber.equal(web3.utils.toBN((ticketPrice * numberOfTickets) * 3));
     expect(game0State.pot[0].assetType).to.be.bignumber.equal('0');
@@ -526,7 +524,7 @@ contract('GameMaster', function ([ creator, other ]) {
     let activeGamesBeforeGame1End = await contract.getActiveGames.call(2, {from: accounts[1]});
     // console.log(activeGamesBeforeGame1End);
     activeGamesBeforeGame1End.forEach((ticket, index) => {
-      console.log('activeGamesBeforeGame1End: ' + index + ': ' + ticket)
+      // console.log('activeGamesBeforeGame1End: ' + index + ': ' + ticket)
     });
     // return;
 
