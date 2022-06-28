@@ -630,13 +630,13 @@ contract GameMaster is AccessControl, ERC721Holder {
    */
   function addGamePotERC20Asset(
     uint32 _gameNumber,
-    uint248 _assetValue,
+    uint248 _assetAmount,
     address _assetAddress
   ) external onlyRole(CALLER_ROLE) {
     _addGamePotAsset(
       _gameNumber,
       0,
-      _assetValue,
+      _assetAmount,
       _assetAddress
     );
   }
@@ -646,13 +646,13 @@ contract GameMaster is AccessControl, ERC721Holder {
    */
   function addGamePotERC721Asset(
     uint32 _gameNumber,
-    uint248 _assetValue,
+    uint248 _assetIndex,
     address _assetAddress
   ) external onlyRole(CALLER_ROLE) {
     _addGamePotAsset(
       _gameNumber,
       1,
-      _assetValue,
+      _assetIndex,
       _assetAddress
     );
   }
@@ -728,13 +728,13 @@ contract GameMaster is AccessControl, ERC721Holder {
    */
   function removeGamePotERC20Asset(
     uint32 _gameNumber,
-    uint248 _assetValue,
+    uint248 _assetAmount,
     address _assetAddress
   ) external onlyRole(CALLER_ROLE) {
     _removeGamePotAsset(
       _gameNumber,
       0,
-      _assetValue,
+      _assetAmount,
       _assetAddress
     );
   }
@@ -744,13 +744,13 @@ contract GameMaster is AccessControl, ERC721Holder {
    */
   function removeGamePotERC721Asset(
     uint32 _gameNumber,
-    uint248 _assetValue,
+    uint248 _assetIndex,
     address _assetAddress
   ) external onlyRole(CALLER_ROLE) {
     _removeGamePotAsset(
       _gameNumber,
       1,
-      _assetValue,
+      _assetIndex,
       _assetAddress
     );
   }
