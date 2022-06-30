@@ -672,8 +672,9 @@ contract GameMaster is AccessControl, ERC721Holder {
     );
 
     require(
-      g.ownerAddress == msg.sender,
-      "Only owner of this game"
+      g.ownerAddress == msg.sender
+      || hasRole(MANAGER_ROLE, msg.sender),
+      "Only manager role, or owner of game"
     );
     
     _endGame(_gameNumber);
