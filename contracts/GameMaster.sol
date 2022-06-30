@@ -533,15 +533,6 @@ contract GameMaster is AccessControl, ERC721Holder {
     bool sufficient
   ) {
     Game storage g = games[_gameNumber];
-
-    require(
-      g.maxPlayers > 0,
-      "Invalid game"
-    );
-    require(
-      g.status > 0,
-      "Game already ended"
-    );
     
     IERC20Metadata _token = IERC20Metadata(g.pot[0].assetAddress);
 
@@ -660,6 +651,13 @@ contract GameMaster is AccessControl, ERC721Holder {
   ) external onlyRole(CALLER_ROLE) returns(
     bool sufficient
   ) {
+    Game storage g = games[_gameNumber];
+
+    require(
+      g.status == 1,
+      "Invalid game, or has ended"
+    );
+
     return _endGame(_gameNumber);
   }
 
@@ -671,12 +669,11 @@ contract GameMaster is AccessControl, ERC721Holder {
   ) external returns(
     bool sufficient
   ) {
-
     Game storage g = games[_gameNumber];
 
     require(
       g.status == 2,
-      "Not a community game"
+      "Not a community game, or ended"
     );
 
     require(
