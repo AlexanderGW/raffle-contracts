@@ -18,6 +18,15 @@ contract Oracle {
     );
   }
 
+  function setOwner(address _address) external {
+    require(
+      msg.sender == owner,
+      "Owner only"
+    );
+    
+    owner = _address;
+  }
+
   function feedRandomness(uint256 _rand) external {
     require(
       msg.sender == owner,
