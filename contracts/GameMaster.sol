@@ -955,48 +955,6 @@ contract GameMaster is AccessControl, ERC721Holder {
       g.winnerResult
     );
   }
-  // function getGameState(
-  //   uint32 _gameNumber
-  // ) external view
-  // returns (
-  //   uint8 status,
-  //   GamePot[] memory pot,
-  //   uint16 playerCount,
-  //   uint24 ticketCount,
-  //   uint16 maxPlayers,
-  //   uint16 maxTicketsPlayer,
-  //   uint128 ticketPrice,
-  //   uint8 feePercent,
-  //   address feeAddress,
-  //   address winnerAddress,
-  //   uint32[] memory winnerResult
-  // ) {
-  //   Game storage g = games[_gameNumber];
-
-  //   require(
-  //     g.maxPlayers > 0,
-  //     "Invalid game"
-  //   );
-
-  //   GamePot[] memory _pots = new GamePot[](g.potCount);
-  //   for (uint8 _i = 0; _i < g.potCount; _i++) {
-  //     _pots[_i] = g.pot[_i];
-  //   }
-
-  //   return (
-  //     g.status,
-  //     _pots,
-  //     g.playerCount,
-  //     g.ticketCount,
-  //     g.maxPlayers,
-  //     g.maxTicketsPlayer,
-  //     g.ticketPrice,
-  //     g.feePercent,
-  //     g.feeAddress,
-  //     g.winnerAddress,
-  //     g.winnerResult
-  //   );
-  // }
   
   /**
    * @dev Return an array of tickets in game, by player address
