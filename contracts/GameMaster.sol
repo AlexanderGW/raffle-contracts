@@ -997,16 +997,16 @@ contract GameMaster is AccessControl, ERC721Holder {
   /**
    * @dev Define new `treasuryFeePercent`
    */
-  // function setTreasuryFeePercent(
-  //   uint8 _feePercent
-  // ) external onlyRole(MANAGER_ROLE) {
-  //   require(
-  //     _feePercent >= 0 && _feePercent <= 50,
-  //     "Fee range: 0-50"
-  //   );
+  function setTreasuryFeePercent(
+    uint8 _feePercent
+  ) external onlyRole(MANAGER_ROLE) {
+    require(
+      _feePercent >= 0 && _feePercent <= 50,
+      "Fee range: 0-50"
+    );
 
-  //   treasuryFeePercent = _feePercent;
-  // }
+    treasuryFeePercent = _feePercent;
+  }
 
   /**
    * @dev Define new ERC20 `gameToken` with provided `_token`
