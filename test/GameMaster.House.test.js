@@ -30,7 +30,7 @@ contract('GameMaster', function ([ creator, other ]) {
     decimals = web3.utils.toBN(18);
   });
 
-  it('should allow accounts to buy tickets', async function () {
+  it('should allow roled account to run house game', async function () {
     let expected, actual;
 
     let nft0 = await nft.awardItem(
@@ -49,12 +49,37 @@ contract('GameMaster', function ([ creator, other ]) {
     // console.log(nft1.logs[0].args.tokenId);
     // return;
 
+    // Seed accounts and set approvals for testing
+    await token.approve(
+      accounts[0],
+      web3.utils.toBN(1000000).mul(web3.utils.toBN(10).pow(decimals)),
+      {from: accounts[0]}
+    )
+
+    let approveAmount = web3.utils.toBN(10000).mul(web3.utils.toBN(10).pow(decimals));
+    await token.transferFrom(accounts[0], accounts[1], approveAmount, { from: accounts[0] })
+    await token.transferFrom(accounts[0], accounts[2], approveAmount, { from: accounts[0] })
+    await token.transferFrom(accounts[0], accounts[3], approveAmount, { from: accounts[0] })
+    await token.transferFrom(accounts[0], accounts[4], approveAmount, { from: accounts[0] })
+
+    let approveAmount100K = web3.utils.toBN(100000).mul(web3.utils.toBN(10).pow(decimals));
+    await token.approve(contract.address, approveAmount100K, {from: accounts[0]});
+    await token.approve(contract.address, approveAmount100K, {from: accounts[1]});
+    await token.approve(contract.address, approveAmount100K, {from: accounts[2]});
+    await token.approve(contract.address, approveAmount100K, {from: accounts[3]});
+    await token.approve(contract.address, approveAmount100K, {from: accounts[4]});
+
+    await nft.approve(contract.address, nft0.logs[0].args.tokenId, {from: accounts[0]});
+    await nft.approve(contract.address, nft1.logs[0].args.tokenId, {from: accounts[0]});
+
+
+
     let maxPlayers = web3.utils.toBN('3');
     let maxTicketsPlayer = web3.utils.toBN('10');
     let gameFeePercent = web3.utils.toBN('0');//web3.utils.toBN('1').mul(web3.utils.toBN(10).pow(decimals));
     let ticketPrice = web3.utils.toBN('1').mul(web3.utils.toBN(10).pow(decimals));
     let numberOfTickets = web3.utils.toBN('10');
-    let gameFeeAddress = accounts[8];
+    let gameFeeAddress = accounts[9];
 
     // Start game for GameBobToken, exactly one token per entry,
     // max three players, max one ticket per player.
@@ -90,30 +115,6 @@ contract('GameMaster', function ([ creator, other ]) {
     expect(game0Log.ticketPrice).to.be.bignumber.equal(ticketPrice);
     expect(game0Log.maxPlayers).to.be.bignumber.equal(maxPlayers);
     expect(game0Log.maxTicketsPlayer).to.be.bignumber.equal(maxTicketsPlayer);
-
-    // Seed accounts and set approvals for testing
-    await token.approve(
-      accounts[0],
-      web3.utils.toBN(1000000).mul(web3.utils.toBN(10).pow(decimals)),
-      {from: accounts[0]}
-    )
-
-    let approveAmount = web3.utils.toBN(10000).mul(web3.utils.toBN(10).pow(decimals));
-    // await token.transferFrom(accounts[0], accounts[1], approveAmount, { from: accounts[0] })
-    await token.transferFrom(accounts[0], accounts[1], approveAmount, { from: accounts[0] })
-    await token.transferFrom(accounts[0], accounts[2], approveAmount, { from: accounts[0] })
-    await token.transferFrom(accounts[0], accounts[3], approveAmount, { from: accounts[0] })
-    await token.transferFrom(accounts[0], accounts[4], approveAmount, { from: accounts[0] })
-
-    let approveAmount100K = web3.utils.toBN(100000).mul(web3.utils.toBN(10).pow(decimals));
-    await token.approve(contract.address, approveAmount100K, {from: accounts[0]});
-    await token.approve(contract.address, approveAmount100K, {from: accounts[1]});
-    await token.approve(contract.address, approveAmount100K, {from: accounts[2]});
-    await token.approve(contract.address, approveAmount100K, {from: accounts[3]});
-    await token.approve(contract.address, approveAmount100K, {from: accounts[4]});
-
-    await nft.approve(contract.address, nft0.logs[0].args.tokenId, {from: accounts[0]});
-    await nft.approve(contract.address, nft1.logs[0].args.tokenId, {from: accounts[0]});
 
     // Add additional game pot ERC20 asset
     let game0Pot1AssetValue = 5;

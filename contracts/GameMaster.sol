@@ -93,16 +93,15 @@ contract GameMaster is AccessControl, ERC721Holder {
     uint128 ticketPrice;
 
     /**
-     * @dev Percentage (hundredth) of the pot will go to `gameFeeAddress`.
+     * @dev Percentage (hundredth) of the pot zero will go to `gameFeeAddress`.
      * Zero value disables feature
      */
     uint8 feePercent;
 
     /**
-     * @dev Owner address of the game
-     * @todo Allow people to run their own games? Risky?, sure.
+     * @dev Address of user that actioned this `startGame()`
      */
-    // address ownerAddress;
+    address ownerAddress;
 
     /**
      * @dev Winner result (i.e. single ticket index for raffle, or multiple numbers for lotto)
@@ -159,6 +158,17 @@ contract GameMaster is AccessControl, ERC721Holder {
    * @dev Total number of games ended (increments in `endGame`)
    */
   uint256 public totalGamesEnded;
+
+  /**
+   * @dev All community game fees are sent to this address
+   */
+  address public treasuryAddress;
+
+  /**
+   * @dev Percentage (hundredth) of the game pot zero will go to `treasuryAddress`.
+   * This is deducted before the game defined `feeAddress`, in `endGame()`. Zero value disables feature
+   */
+  uint256 public treasuryFeePercent;
 
   /**
    * @dev Randomness oracle, for selecting winning number(s) on `endGame()`
@@ -227,6 +237,12 @@ contract GameMaster is AccessControl, ERC721Holder {
     // Oracle of randomness - This oracle needs to be fed regularly
     oracle = Oracle(_oracleAddress);
 
+    // Address where community game fees are sent
+    treasuryAddress = msg.sender;
+
+    // Set a default treasure fee of 10%, for community games
+    treasuryFeePercent = 10;
+
     // Grant the contract deployer the default admin role: it will be able
     // to grant and revoke any roles
     _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -287,14 +303,15 @@ contract GameMaster is AccessControl, ERC721Holder {
   /**
    * @dev Start a new game (if none running) with given parameters
    */
-  function startGame(
+  function _startGame(
     address _gameTokenAddress,
     address _gameFeeAddress,
     uint8 _gameFeePercent,
     uint128 _ticketPrice,
     uint16 _maxPlayers,
-    uint16 _maxTicketsPlayer
-  ) external onlyRole(CALLER_ROLE) {
+    uint16 _maxTicketsPlayer,
+    uint8 _gameStatus
+  ) private {
     require(
       _ticketPrice > 0,
       "Price greater than 0"
@@ -307,6 +324,10 @@ contract GameMaster is AccessControl, ERC721Holder {
       _maxTicketsPlayer > 0,
       "Max tickets greater than 0"
     );
+    require(
+      _gameFeePercent >= 0 && _gameFeePercent <= 100,
+      "Fee range: 0-100"
+    );
 
     // Get game number
     uint32 _gameNumber = uint32(totalGames);
@@ -315,7 +336,7 @@ contract GameMaster is AccessControl, ERC721Holder {
 
     // Create new game record
     Game storage g = games[_gameNumber];
-    g.status = 1;
+    g.status = _gameStatus;
     g.number = _gameNumber;
     g.playerCount = 0;
     g.ticketCount = 0;
@@ -324,6 +345,11 @@ contract GameMaster is AccessControl, ERC721Holder {
     g.ticketPrice = _ticketPrice;
     g.feePercent = _gameFeePercent;
     g.feeAddress = _gameFeeAddress;
+
+    // Used to identify the owner of a community game
+    if (_gameStatus == 2)
+      g.ownerAddress = msg.sender;
+
     g.potCount = 1;
 
     // Create initial game token pot, as index zero
@@ -350,7 +376,58 @@ contract GameMaster is AccessControl, ERC721Holder {
       g.maxTicketsPlayer
     );
   }
+
+  /**
+   * @dev Start a new game (if none running) with given parameters
+   */
+  function startGame(
+    address _gameTokenAddress,
+    address _gameFeeAddress,
+    uint8 _gameFeePercent,
+    uint128 _ticketPrice,
+    uint16 _maxPlayers,
+    uint16 _maxTicketsPlayer
+  ) external onlyRole(CALLER_ROLE) {
+
+    // All house games are status `1`
+    uint8 _gameStatus = 1;
+
+    _startGame(
+      _gameTokenAddress,
+      _gameFeeAddress,
+      _gameFeePercent,
+      _ticketPrice,
+      _maxPlayers,
+      _maxTicketsPlayer,
+      _gameStatus
+    );
+  }
+
+  function startCommunityGame(
+    address _gameTokenAddress,
+    address _gameFeeAddress,
+    uint8 _gameFeePercent,
+    uint128 _ticketPrice,
+    uint16 _maxPlayers,
+    uint16 _maxTicketsPlayer
+  ) external {
+
+    // All community games are status `2`
+    uint8 _gameStatus = 2;
+
+    _startGame(
+      _gameTokenAddress,
+      _gameFeeAddress,
+      _gameFeePercent,
+      _ticketPrice,
+      _maxPlayers,
+      _maxTicketsPlayer,
+      _gameStatus
+    );
+  }
+
 // TODO: Free ticket support
+
   /**
    * @dev Allow a player to buy Nth tickets in `_gameNumber`, at predefined `g.ticketPrice` of `g.pot[0].assetAddress`
    */
@@ -450,9 +527,9 @@ contract GameMaster is AccessControl, ERC721Holder {
   /**
    * @dev Ends the current game, and picks a winner
    */
-  function endGame(
+  function _endGame(
     uint32 _gameNumber
-  ) external onlyRole(CALLER_ROLE) {
+  ) private {
     Game storage g = games[_gameNumber];
 
     require(
@@ -466,7 +543,7 @@ contract GameMaster is AccessControl, ERC721Holder {
     
     IERC20Metadata _token = IERC20Metadata(g.pot[0].assetAddress);
 
-    // Check contract holds enough balance in game token, to send to winner
+    // Check contract holds enough balance in game token (pot zero), to send to winner
     uint256 _ticketPot = g.pot[0].value;
     uint256 _balance = _token.balanceOf(address(this));
     require(
@@ -475,6 +552,7 @@ contract GameMaster is AccessControl, ERC721Holder {
     );
 
     // Close game
+    uint8 _gameStatus = g.status;
     g.status = 0;
 
     // Pick winner
@@ -488,16 +566,29 @@ contract GameMaster is AccessControl, ERC721Holder {
     // Store winner address index
     g.winnerAddress = g.tickets[_index];
 
-    // Send fees (if applicable)
-    if (g.feePercent > 0) {
-      uint256 _feeTotal = _ticketPot.div(100).mul(g.feePercent);
+    // Send treasury fee (if applicable, only for community games)
+    if (_gameStatus == 2 && treasuryFeePercent > 0) {
+      uint256 _treasuryFeeTotal = _ticketPot.div(100).mul(treasuryFeePercent);
 
-      // Transfer game fee from pot
-      if (_feeTotal > 0) {
-        _token.transfer(g.feeAddress, _feeTotal);
+      // Transfer treasury fee from pot
+      if (_treasuryFeeTotal > 0) {
+        _token.transfer(treasuryAddress, _treasuryFeeTotal);
 
         // Deduct fee from pot value
-        _ticketPot -= _feeTotal;
+        _ticketPot -= _treasuryFeeTotal;
+      }
+    }
+
+    // Send game fee (if applicable)
+    if (g.feePercent > 0) {
+      uint256 _gameFeeTotal = _ticketPot.div(100).mul(g.feePercent);
+
+      // Transfer game fee from pot
+      if (_gameFeeTotal > 0) {
+        _token.transfer(g.feeAddress, _gameFeeTotal);
+
+        // Deduct fee from pot value
+        _ticketPot -= _gameFeeTotal;
       }
     }
 
@@ -555,6 +646,37 @@ contract GameMaster is AccessControl, ERC721Holder {
       g.winnerResult,
       _pots
     );
+  }
+
+  /**
+   * @dev Ends the current game, and picks a winner
+   */
+  function endGame(
+    uint32 _gameNumber
+  ) external onlyRole(CALLER_ROLE) {
+    _endGame(_gameNumber);
+  }
+
+  /**
+   * @dev Ends the current game, and picks a winner
+   */
+  function endCommunityGame(
+    uint32 _gameNumber
+  ) external {
+
+    Game storage g = games[_gameNumber];
+
+    require(
+      g.status == 2,
+      "Not a community game"
+    );
+
+    require(
+      g.ownerAddress == msg.sender,
+      "Only owner of this game"
+    );
+    
+    _endGame(_gameNumber);
   }
 
   /**
@@ -896,6 +1018,29 @@ contract GameMaster is AccessControl, ERC721Holder {
 
     return _tickets;
   }
+
+  /**
+   * @dev Define new `treasuryAddress`
+   */
+  function setTreasuryAddress(
+    address _address
+  ) external onlyRole(MANAGER_ROLE) {
+    treasuryAddress = _address;
+  }
+
+  /**
+   * @dev Define new `treasuryFeePercent`
+   */
+  // function setTreasuryFeePercent(
+  //   uint8 _feePercent
+  // ) external onlyRole(MANAGER_ROLE) {
+  //   require(
+  //     _feePercent >= 0 && _feePercent <= 50,
+  //     "Fee range: 0-50"
+  //   );
+
+  //   treasuryFeePercent = _feePercent;
+  // }
 
   /**
    * @dev Define new ERC20 `gameToken` with provided `_token`
