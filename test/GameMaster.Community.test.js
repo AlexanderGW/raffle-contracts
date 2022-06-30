@@ -136,16 +136,25 @@ contract('GameMaster', function ([ creator, other ]) {
     try {
       await contract.endCommunityGame(
         gameStartCommunityGameLog.gameNumber,
-        {from: accounts[0]}
+        {from: accounts[2]}
       );
       assert.fail('The transaction should have thrown an error');
     } catch (err) {
       assert.include(
         err.message,
-        "Only owner of this game",
-        "The error message should contain 'Only owner of this game'"
+        "Only manager role, or owner of game",
+        "The error message should contain 'Only manager role, or owner of game'"
       );
+    
     }
+
+    // End community game, from a `MANAGER_ROLE` account
+    let gameEndCommunityGameAsManagerCall = await contract.endCommunityGame.call(
+      gameStartCommunityGameLog.gameNumber,
+      {from: accounts[0]}
+    );
+    // console.log(gameEndCommunityGameAsManagerCall);
+    expect(gameEndCommunityGameAsManagerCall).to.be.equal(true);
 
     // End community game, from same account that created it
     let gameEndCommunityGame = await contract.endCommunityGame(

@@ -529,7 +529,9 @@ contract GameMaster is AccessControl, ERC721Holder {
    */
   function _endGame(
     uint32 _gameNumber
-  ) private {
+  ) private returns(
+    bool sufficient
+  ) {
     Game storage g = games[_gameNumber];
 
     require(
@@ -646,6 +648,8 @@ contract GameMaster is AccessControl, ERC721Holder {
       g.winnerResult,
       _pots
     );
+
+    return true;
   }
 
   /**
@@ -653,8 +657,10 @@ contract GameMaster is AccessControl, ERC721Holder {
    */
   function endGame(
     uint32 _gameNumber
-  ) external onlyRole(CALLER_ROLE) {
-    _endGame(_gameNumber);
+  ) external onlyRole(CALLER_ROLE) returns(
+    bool sufficient
+  ) {
+    return _endGame(_gameNumber);
   }
 
   /**
@@ -662,7 +668,9 @@ contract GameMaster is AccessControl, ERC721Holder {
    */
   function endCommunityGame(
     uint32 _gameNumber
-  ) external {
+  ) external returns(
+    bool sufficient
+  ) {
 
     Game storage g = games[_gameNumber];
 
@@ -677,7 +685,7 @@ contract GameMaster is AccessControl, ERC721Holder {
       "Only manager role, or owner of game"
     );
     
-    _endGame(_gameNumber);
+    return _endGame(_gameNumber);
   }
 
   /**
