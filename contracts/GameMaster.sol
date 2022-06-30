@@ -924,6 +924,7 @@ contract GameMaster is AccessControl, ERC721Holder {
     uint128 ticketPrice,
     uint8 feePercent,
     address feeAddress,
+    address ownerAddress,
     address winnerAddress,
     uint32[] memory winnerResult
   ) {
@@ -949,6 +950,7 @@ contract GameMaster is AccessControl, ERC721Holder {
       g.ticketPrice,
       g.feePercent,
       g.feeAddress,
+      g.ownerAddress,
       g.winnerAddress,
       g.winnerResult
     );
