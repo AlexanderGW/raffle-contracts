@@ -326,7 +326,7 @@ contract GameMaster is AccessControl, ERC721Holder {
     );
     require(
       _gameFeePercent >= 0 && _gameFeePercent <= 100,
-      "Fee range: 0-100"
+      "Fee range 0-100"
     );
 
     // Get game number
@@ -673,7 +673,7 @@ contract GameMaster is AccessControl, ERC721Holder {
 
     require(
       g.status == 2,
-      "Not a community game, or ended"
+      "Invalid game, or ended"
     );
 
     require(
@@ -1002,7 +1002,7 @@ contract GameMaster is AccessControl, ERC721Holder {
   ) external onlyRole(MANAGER_ROLE) {
     require(
       _feePercent >= 0 && _feePercent <= 50,
-      "Fee range: 0-50"
+      "Range 0-50"
     );
 
     treasuryFeePercent = _feePercent;
