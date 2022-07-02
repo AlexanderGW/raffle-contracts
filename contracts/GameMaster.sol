@@ -387,33 +387,15 @@ contract GameMaster is AccessControl, ERC721Holder {
     uint128 _ticketPrice,
     uint16 _maxPlayers,
     uint16 _maxTicketsPlayer
-  ) external onlyRole(CALLER_ROLE) {
-
-    // All house games are status `1`
-    uint8 _gameStatus = 1;
-
-    _startGame(
-      _gameTokenAddress,
-      _gameFeeAddress,
-      _gameFeePercent,
-      _ticketPrice,
-      _maxPlayers,
-      _maxTicketsPlayer,
-      _gameStatus
-    );
-  }
-
-  function startCommunityGame(
-    address _gameTokenAddress,
-    address _gameFeeAddress,
-    uint8 _gameFeePercent,
-    uint128 _ticketPrice,
-    uint16 _maxPlayers,
-    uint16 _maxTicketsPlayer
   ) external {
 
-    // All community games are status `2`
+    // Default to community game
     uint8 _gameStatus = 2;
+    
+    // User has CALLER_ROLE, switch to house game
+    if (hasRole(CALLER_ROLE, msg.sender)) {
+      _gameStatus = 1;
+    }
 
     _startGame(
       _gameTokenAddress,
@@ -425,6 +407,29 @@ contract GameMaster is AccessControl, ERC721Holder {
       _gameStatus
     );
   }
+
+  // function startCommunityGame(
+  //   address _gameTokenAddress,
+  //   address _gameFeeAddress,
+  //   uint8 _gameFeePercent,
+  //   uint128 _ticketPrice,
+  //   uint16 _maxPlayers,
+  //   uint16 _maxTicketsPlayer
+  // ) external {
+
+  //   // All community games are status `2`
+  //   uint8 _gameStatus = 2;
+
+  //   _startGame(
+  //     _gameTokenAddress,
+  //     _gameFeeAddress,
+  //     _gameFeePercent,
+  //     _ticketPrice,
+  //     _maxPlayers,
+  //     _maxTicketsPlayer,
+  //     _gameStatus
+  //   );
+  // }
 
 // TODO: Free ticket support
 
@@ -525,14 +530,62 @@ contract GameMaster is AccessControl, ERC721Holder {
   }
 
   /**
-   * @dev Ends the current game, and picks a winner
+   * @dev Is `msg.sender` authorised to modify game `_gameNumber`
    */
-  function _endGame(
+  function isAuthorised(
     uint32 _gameNumber
-  ) private returns(
-    bool sufficient
+  ) public view returns(
+    bool 
   ) {
     Game storage g = games[_gameNumber];
+
+    if (
+
+      // Only owner of community game
+      (g.status == 2 && g.ownerAddress == msg.sender)
+
+      // If user has CALLER_ROLE, for house games
+      || (g.status == 1 && hasRole(CALLER_ROLE, msg.sender))
+    ) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * @dev Ends the current game, and picks a winner (requires `MANAGER_ROLE` or owner, if community game)
+   */
+  function endGame(
+    uint32 _gameNumber
+  ) external returns(
+    bool
+  ) {
+    Game storage g = games[_gameNumber];
+
+    require(
+      g.maxPlayers >= 0,
+      "Invalid game"
+    );
+    require(
+      g.status > 0,
+      "Game already ended"
+    );
+
+    if (
+      g.status == 2
+      && g.ownerAddress != msg.sender
+      && !hasRole(MANAGER_ROLE, msg.sender)
+    ) {
+      revert("Only manager role, or owner of game");
+    }
+
+    if (
+      g.status == 1
+      && !hasRole(CALLER_ROLE, msg.sender)
+    ) {
+      revert("Only caller role");
+    }
     
     IERC20Metadata _token = IERC20Metadata(g.pot[0].assetAddress);
 
@@ -644,48 +697,6 @@ contract GameMaster is AccessControl, ERC721Holder {
   }
 
   /**
-   * @dev Ends the current game, and picks a winner
-   */
-  function endGame(
-    uint32 _gameNumber
-  ) external onlyRole(CALLER_ROLE) returns(
-    bool sufficient
-  ) {
-    Game storage g = games[_gameNumber];
-
-    require(
-      g.status == 1,
-      "Invalid game, or has ended"
-    );
-
-    return _endGame(_gameNumber);
-  }
-
-  /**
-   * @dev Ends the current game, and picks a winner
-   */
-  function endCommunityGame(
-    uint32 _gameNumber
-  ) external returns(
-    bool sufficient
-  ) {
-    Game storage g = games[_gameNumber];
-
-    require(
-      g.status == 2,
-      "Invalid game, or ended"
-    );
-
-    require(
-      g.ownerAddress == msg.sender
-      || hasRole(MANAGER_ROLE, msg.sender),
-      "Only manager role, or owner of game"
-    );
-    
-    return _endGame(_gameNumber);
-  }
-
-  /**
    * @dev Add an additional pot asset to a game
    */
   function _addGamePotAsset(
@@ -760,7 +771,12 @@ contract GameMaster is AccessControl, ERC721Holder {
     uint32 _gameNumber,
     uint248 _assetAmount,
     address _assetAddress
-  ) external onlyRole(CALLER_ROLE) {
+  ) external {
+    require(
+      isAuthorised(_gameNumber),
+      "Not authorised"
+    );
+
     _addGamePotAsset(
       _gameNumber,
       0,
@@ -776,7 +792,12 @@ contract GameMaster is AccessControl, ERC721Holder {
     uint32 _gameNumber,
     uint248 _assetIndex,
     address _assetAddress
-  ) external onlyRole(CALLER_ROLE) {
+  ) external {
+    require(
+      isAuthorised(_gameNumber),
+      "Not authorised"
+    );
+
     _addGamePotAsset(
       _gameNumber,
       1,
@@ -858,7 +879,12 @@ contract GameMaster is AccessControl, ERC721Holder {
     uint32 _gameNumber,
     uint248 _assetAmount,
     address _assetAddress
-  ) external onlyRole(CALLER_ROLE) {
+  ) external {
+    require(
+      isAuthorised(_gameNumber),
+      "Not authorised"
+    );
+
     _removeGamePotAsset(
       _gameNumber,
       0,
@@ -874,7 +900,12 @@ contract GameMaster is AccessControl, ERC721Holder {
     uint32 _gameNumber,
     uint248 _assetIndex,
     address _assetAddress
-  ) external onlyRole(CALLER_ROLE) {
+  ) external {
+    require(
+      isAuthorised(_gameNumber),
+      "Not authorised"
+    );
+
     _removeGamePotAsset(
       _gameNumber,
       1,
