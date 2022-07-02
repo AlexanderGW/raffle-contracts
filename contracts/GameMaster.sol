@@ -266,39 +266,39 @@ contract GameMaster is AccessControl, ERC721Holder {
   /**
    * @dev Reset all game storage states
    */
-  function _resetGame(
-    uint32 _gameNumber
-  ) private {
-    Game storage g = games[_gameNumber];
+  // function _resetGame(
+  //   uint32 _gameNumber
+  // ) private {
+  //   Game storage g = games[_gameNumber];
 
-    require(
-      g.maxPlayers > 0,
-      "Invalid game"
-    );
-    require(
-      g.status > 0,
-      "Game already ended"
-    );
+  //   require(
+  //     g.maxPlayers > 0,
+  //     "Invalid game"
+  //   );
+  //   require(
+  //     g.status > 0,
+  //     "Game already ended"
+  //   );
 
-    g.tickets = new address[](0);
-    address j;
-    for (uint256 i = 0; i < g.playerCount; i++) {
-      j = g.playersIndex[i];
-      delete g.playerTicketCount[j];
-    }
-    g.playersIndex = new address[](0);
-    g.playerCount = 0;
-    g.ticketCount = 0;
-  }
+  //   g.tickets = new address[](0);
+  //   address j;
+  //   for (uint256 i = 0; i < g.playerCount; i++) {
+  //     j = g.playersIndex[i];
+  //     delete g.playerTicketCount[j];
+  //   }
+  //   g.playersIndex = new address[](0);
+  //   g.playerCount = 0;
+  //   g.ticketCount = 0;
+  // }
 
   /**
    * @dev Game reset call for managers
    */
-  function resetGame(
-    uint32 _gameNumber
-  ) external onlyRole(MANAGER_ROLE) {
-    _resetGame(_gameNumber);
-  }
+  // function resetGame(
+  //   uint32 _gameNumber
+  // ) external onlyRole(MANAGER_ROLE) {
+  //   _resetGame(_gameNumber);
+  // }
 
   /**
    * @dev Start a new game (if none running) with given parameters
