@@ -240,8 +240,8 @@ contract GameMaster is AccessControl, ERC721Holder {
     // Address where community game fees are sent
     treasuryAddress = msg.sender;
 
-    // Set a default treasure fee of 10%, for community games
-    treasuryFeePercent = 10;
+    // Set a default treasure fee of 5%, for community games
+    treasuryFeePercent = 5;
 
     // Grant the contract deployer the default admin role: it will be able
     // to grant and revoke any roles
