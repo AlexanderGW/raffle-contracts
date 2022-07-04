@@ -163,25 +163,25 @@ contract('GameMaster', function ([ creator, other ]) {
     );
 
     // tickets = 3 * 1 = 3
-    // treasuryfee = 10% (default) = 0.3 @ msg.sender (default)
-    // game fee =  50% = 1.35 @ A[6]
-    // winner = 1.35
+    // treasuryfee = 5% (default) = 0.15 @ msg.sender (default)
+    // game fee =  50% = 1.425 @ A[6]
+    // winner = 1.425
 
     let gameEndCommunityGameLog = gameEndCommunityGame.logs[0].args;
     // console.log(gameEndCommunityGameLog);
 
     let treasuryAddressBalance = await token.balanceOf.call(treasuryAddress, {from: accounts[2]});
     // console.log('treasuryAddressBalance: ' + treasuryAddressBalance.toString());
-    expect(treasuryAddressBalance).to.eql(web3.utils.toBN('300000000000000000'));
+    expect(treasuryAddressBalance).to.eql(web3.utils.toBN('150000000000000000'));
 
     let gameFeeAddressBalance = await token.balanceOf.call(gameFeeAddress, {from: accounts[2]});
     // console.log('gameFeeAddressBalance: ' + gameFeeAddressBalance.toString());
-    expect(gameFeeAddressBalance).to.eql(web3.utils.toBN('1350000000000000000'));
+    expect(gameFeeAddressBalance).to.eql(web3.utils.toBN('1425000000000000000'));
 
     let winnerBalance = await token.balanceOf.call(gameEndCommunityGameLog.winnerAddress, {from: accounts[2]});
     // console.log('winnerBalance: ' + winnerBalance.toString());
     
     // Initial seed amount of 10k, plus original ticket cost of 1, plus the 0.35 offset
-    expect(winnerBalance).to.eql(web3.utils.toBN('10000350000000000000000'));
+    expect(winnerBalance).to.eql(web3.utils.toBN('10000425000000000000000'));
   });
 });
