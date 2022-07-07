@@ -880,8 +880,10 @@ contract GameMaster is AccessControl, ERC721Holder {
     uint248 _assetAmount,
     address _assetAddress
   ) external {
+    Game storage g = games[_gameNumber];
+
     require(
-      isAuthorised(_gameNumber),
+      g.status == 1 && hasRole(CALLER_ROLE, msg.sender),
       "Not authorised"
     );
 
@@ -901,8 +903,10 @@ contract GameMaster is AccessControl, ERC721Holder {
     uint248 _assetIndex,
     address _assetAddress
   ) external {
+    Game storage g = games[_gameNumber];
+
     require(
-      isAuthorised(_gameNumber),
+      g.status == 1 && hasRole(CALLER_ROLE, msg.sender),
       "Not authorised"
     );
 
