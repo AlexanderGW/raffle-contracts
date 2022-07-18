@@ -11,7 +11,7 @@ const { BN, expectEvent, expectRevert, constants } = require('@openzeppelin/test
 const Oracle = artifacts.require('Oracle');
 const GameMaster = artifacts.require('GameMaster');
 const GameBobToken = artifacts.require('GameBobToken');
-const GameTrophy = artifacts.require('GameTrophy');
+const GameTrophyERC721 = artifacts.require('GameTrophyERC721');
 
 // Start test block
 contract('GameMaster', function ([ creator, other ]) {
@@ -26,7 +26,7 @@ contract('GameMaster', function ([ creator, other ]) {
     oracle = await Oracle.new({ from: creator });
     contract = await GameMaster.new(oracle.address, { from: creator });
     token = await GameBobToken.new(creator, { from: creator });
-    nft = await GameTrophy.new({ from: creator });
+    nft = await GameTrophyERC721.new({ from: creator });
     decimals = web3.utils.toBN(18);
   });
 

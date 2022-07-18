@@ -11,7 +11,7 @@ const { BN, expectEvent, expectRevert, constants } = require('@openzeppelin/test
 const Oracle = artifacts.require('Oracle');
 const GameMaster = artifacts.require('GameMaster');
 const GameBobToken = artifacts.require('GameBobToken');
-const GameTrophy = artifacts.require('GameTrophy');
+const GameTrophyERC721 = artifacts.require('GameTrophyERC721');
 
 // Start test block
 contract('GameMaster', function ([ creator, other ]) {
@@ -26,7 +26,7 @@ contract('GameMaster', function ([ creator, other ]) {
     oracle = await Oracle.new({ from: creator });
     contract = await GameMaster.new(oracle.address, { from: creator });
     token = await GameBobToken.new(creator, { from: creator });
-    nft = await GameTrophy.new({ from: creator });
+    nft = await GameTrophyERC721.new({ from: creator });
     decimals = web3.utils.toBN(18);
   });
 
@@ -164,66 +164,66 @@ contract('GameMaster', function ([ creator, other ]) {
 
 
     // Add second game pot ERC721 asset
-    let game0AddPotAsset2 = await contract.addGamePotERC721Asset(
+    // let game0AddPotAsset2 = await contract.addGamePotERC721Asset(
 
-      // Game number
-      game0Log.gameNumber,
+    //   // Game number
+    //   game0Log.gameNumber,
 
-      // Asset value
-      nft1.logs[0].args.tokenId,
+    //   // Asset value
+    //   nft1.logs[0].args.tokenId,
 
-      // Asset address
-      nft.address,
+    //   // Asset address
+    //   nft.address,
 
-      {from: accounts[0]}
-    )
+    //   {from: accounts[0]}
+    // )
 
-    // let game0AddPotAsset2Log = game0AddPotAsset2.logs[0].args;
-    // console.log(game0AddPotAsset2Log);
-    // return;
+    // // let game0AddPotAsset2Log = game0AddPotAsset2.logs[0].args;
+    // // console.log(game0AddPotAsset2Log);
+    // // return;
 
-    // Check NFT one is owned by contract
-    let nft1OwnerAfterAdding = await nft.ownerOf.call(
-      nft1.logs[0].args.tokenId,
-      {from: accounts[0]}
-    );
-    // console.log(nft1OwnerAfterAdding);
-    expect(nft1OwnerAfterAdding).to.be.bignumber.equal(contract.address);
+    // // Check NFT one is owned by contract
+    // let nft1OwnerAfterAdding = await nft.ownerOf.call(
+    //   nft1.logs[0].args.tokenId,
+    //   {from: accounts[0]}
+    // );
+    // // console.log(nft1OwnerAfterAdding);
+    // expect(nft1OwnerAfterAdding).to.be.bignumber.equal(contract.address);
 
-    // Remove NFT one from game, back to A0
-    let game0AddPotAsset2Remove = await contract.removeGamePotERC721Asset(
+    // // Remove NFT one from game, back to A0
+    // let game0AddPotAsset2Remove = await contract.removeGamePotERC721Asset(
 
-      // Game number
-      game0Log.gameNumber,
+    //   // Game number
+    //   game0Log.gameNumber,
 
-      // Asset value
-      nft1.logs[0].args.tokenId,
+    //   // Asset value
+    //   nft1.logs[0].args.tokenId,
 
-      // Asset address
-      nft.address,
+    //   // Asset address
+    //   nft.address,
 
-      {from: accounts[0]}
-    )
+    //   {from: accounts[0]}
+    // )
 
-    // Check NFT one is back to A0 owner
-    let nft1OwnerAfterRemoval = await nft.ownerOf.call(
-      nft1.logs[0].args.tokenId,
-      {from: accounts[0]}
-    );
-    // console.log(nft0Owner);
-    expect(nft1OwnerAfterRemoval).to.be.bignumber.equal(accounts[0]);
+    // // Check NFT one is back to A0 owner
+    // let nft1OwnerAfterRemoval = await nft.ownerOf.call(
+    //   nft1.logs[0].args.tokenId,
+    //   {from: accounts[0]}
+    // );
+    // // console.log(nft0Owner);
+    // expect(nft1OwnerAfterRemoval).to.be.bignumber.equal(accounts[0]);
 
 
-    // Check game zero pot states - for removal of game pot asset
-    let game0State = await contract.getGameState.call(
-      game0Log.gameNumber,
-      {from: accounts[1]}
-    );
+    // // Check game zero pot states - for removal of game pot asset
+    // let game0State = await contract.getGameState.call(
+    //   game0Log.gameNumber,
+    //   {from: accounts[1]}
+    // );
 
-    // Check gamepot asset three, is now null
-    expect(game0State.pot[3].assetAddress).to.eql('0x0000000000000000000000000000000000000000');
-    // console.log(game0State.pot);
-    // return;
+    // // Check gamepot asset three, is now null
+    // expect(game0State.pot[3].assetAddress).to.eql('0x0000000000000000000000000000000000000000');
+    // // console.log(game0State.pot);
+    // // return;
 
 
 

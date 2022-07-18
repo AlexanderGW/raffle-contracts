@@ -3,16 +3,18 @@ pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/access/AccessControl.sol';
 
-import '@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol';
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
+import '@openzeppelin/contracts/token/ERC1155/IERC1155.sol';
 
-import '@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol';
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
+import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 import './Oracle.sol';
 
-contract GameMaster is AccessControl, ERC721Holder {
+contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
   using SafeMath for uint128;
   using SafeMath for uint256;
 
@@ -251,10 +253,23 @@ contract GameMaster is AccessControl, ERC721Holder {
   }
 
   /**
+   * @dev See {IERC165-supportsInterface}.
+   */
+  function supportsInterface(
+    bytes4 interfaceId
+  ) public view virtual override(AccessControl, ERC1155Receiver)
+  returns (bool) {
+      return
+        interfaceId == type(IAccessControl).interfaceId
+        || interfaceId == type(IERC1155Receiver).interfaceId
+        || super.supportsInterface(interfaceId);
+  }
+
+  /**
    * @dev Used by `buyTicket()`
    */
   function _safeTransferFrom(
-    IERC20Metadata token,
+    IERC20 token,
     address sender,
     address recipient,
     uint256 amount
@@ -455,7 +470,7 @@ contract GameMaster is AccessControl, ERC721Holder {
       "Buy at least 1 ticket"
     );
     
-    IERC20Metadata _token = IERC20Metadata(g.pot[0].assetAddress);
+    IERC20 _token = IERC20(g.pot[0].assetAddress);
 
     // Ensure player has enough tokens to play
     uint256 _totalCost = g.ticketPrice.mul(_numberOfTickets);
@@ -587,7 +602,7 @@ contract GameMaster is AccessControl, ERC721Holder {
       revert("Only caller role");
     }
     
-    IERC20Metadata _token = IERC20Metadata(g.pot[0].assetAddress);
+    IERC20 _token = IERC20(g.pot[0].assetAddress);
 
     // Check contract holds enough balance in game token (pot zero), to send to winner
     uint256 _ticketPot = g.pot[0].value;
@@ -653,7 +668,7 @@ contract GameMaster is AccessControl, ERC721Holder {
 
       // ERC20
       if (g.pot[_i].assetType == 0) {
-        IERC20Metadata(
+        IERC20(
           g.pot[_i].assetAddress
         )
         .transfer(
@@ -664,7 +679,7 @@ contract GameMaster is AccessControl, ERC721Holder {
 
       // ERC721
       else if (g.pot[_i].assetType == 1) {
-        IERC721Metadata(
+        IERC721(
           g.pot[_i].assetAddress
         )
         .safeTransferFrom(
@@ -718,7 +733,7 @@ contract GameMaster is AccessControl, ERC721Holder {
     
     // ERC20
     if (_assetType == 0) {
-      IERC20Metadata _assetInterface = IERC20Metadata(_assetAddress);
+      IERC20 _assetInterface = IERC20(_assetAddress);
 
       _safeTransferFrom(
         _assetInterface,
@@ -730,12 +745,25 @@ contract GameMaster is AccessControl, ERC721Holder {
 
     // ERC721
     else if (_assetType == 1) {
-      IERC721Metadata _assetInterface = IERC721Metadata(_assetAddress);
+      IERC721 _assetInterface = IERC721(_assetAddress);
 
       _assetInterface.safeTransferFrom(
         msg.sender,
         address(this),
         uint256(_assetValue)
+      );
+    }
+
+    // ERC1155
+    else if (_assetType == 2) {
+      IERC1155 _assetInterface = IERC1155(_assetAddress);
+
+      _assetInterface.safeTransferFrom(
+        msg.sender,
+        address(this),
+        uint256(_assetValue),
+        1,
+        ''
       );
     }
 
@@ -809,6 +837,27 @@ contract GameMaster is AccessControl, ERC721Holder {
   /**
    * @dev Add an additional pot asset to a game
    */
+  function addGamePotERC1155Asset(
+    uint32 _gameNumber,
+    uint248 _assetIndex,
+    address _assetAddress
+  ) external {
+    require(
+      isAuthorised(_gameNumber),
+      "Not authorised"
+    );
+
+    _addGamePotAsset(
+      _gameNumber,
+      2,
+      _assetIndex,
+      _assetAddress
+    );
+  }
+
+  /**
+   * @dev Add an additional pot asset to a game
+   */
   function _removeGamePotAsset(
     uint32 _gameNumber,
     uint8 _assetType,
@@ -839,7 +888,7 @@ contract GameMaster is AccessControl, ERC721Holder {
 
         // ERC20
         if (_assetType == 0) {
-          IERC20Metadata _assetInterface = IERC20Metadata(_assetAddress);
+          IERC20 _assetInterface = IERC20(_assetAddress);
 
           _assetInterface.transfer(
             msg.sender,
@@ -849,7 +898,7 @@ contract GameMaster is AccessControl, ERC721Holder {
 
         // ERC721
         else if (_assetType == 1) {
-          IERC721Metadata _assetInterface = IERC721Metadata(_assetAddress);
+          IERC721 _assetInterface = IERC721(_assetAddress);
 
           _assetInterface.safeTransferFrom(
             address(this),
