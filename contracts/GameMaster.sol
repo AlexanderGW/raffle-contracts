@@ -858,114 +858,114 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
   /**
    * @dev Add an additional pot asset to a game
    */
-  function _removeGamePotAsset(
-    uint32 _gameNumber,
-    uint8 _assetType,
-    uint248 _assetValue,
-    address _assetAddress
-  ) internal {
-    Game storage g = games[_gameNumber];
+  // function _removeGamePotAsset(
+  //   uint32 _gameNumber,
+  //   uint8 _assetType,
+  //   uint248 _assetValue,
+  //   address _assetAddress
+  // ) internal {
+  //   Game storage g = games[_gameNumber];
 
-    require(
-      g.maxPlayers > 0,
-      "Invalid game"
-    );
-    require(
-      g.status > 0,
-      "Game already ended"
-    );
+  //   require(
+  //     g.maxPlayers > 0,
+  //     "Invalid game"
+  //   );
+  //   require(
+  //     g.status > 0,
+  //     "Game already ended"
+  //   );
 
-    // Check asset entry exists - skip pot zero (ticket price pot)
-    for (uint8 _i = 1; _i < g.potCount; _i++) {
-      GamePot memory pot = g.pot[_i];
+  //   // Check asset entry exists - skip pot zero (ticket price pot)
+  //   for (uint8 _i = 1; _i < g.potCount; _i++) {
+  //     GamePot memory pot = g.pot[_i];
 
-      // Look for matching asset, transfer to sender, and delete entry
-      if (
-        pot.assetType == _assetType
-        && pot.value == _assetValue
-        && pot.assetAddress == _assetAddress
-      ) {
+  //     // Look for matching asset, transfer to sender, and delete entry
+  //     if (
+  //       pot.assetType == _assetType
+  //       && pot.value == _assetValue
+  //       && pot.assetAddress == _assetAddress
+  //     ) {
 
-        // ERC20
-        if (_assetType == 0) {
-          IERC20 _assetInterface = IERC20(_assetAddress);
+  //       // ERC20
+  //       if (_assetType == 0) {
+  //         IERC20 _assetInterface = IERC20(_assetAddress);
 
-          _assetInterface.transfer(
-            msg.sender,
-            uint256(pot.value)
-          );
-        }
+  //         _assetInterface.transfer(
+  //           msg.sender,
+  //           uint256(pot.value)
+  //         );
+  //       }
 
-        // ERC721
-        else if (_assetType == 1) {
-          IERC721 _assetInterface = IERC721(_assetAddress);
+  //       // ERC721
+  //       else if (_assetType == 1) {
+  //         IERC721 _assetInterface = IERC721(_assetAddress);
 
-          _assetInterface.safeTransferFrom(
-            address(this),
-            msg.sender,
-            uint256(_assetValue)
-          );
-        }
+  //         _assetInterface.safeTransferFrom(
+  //           address(this),
+  //           msg.sender,
+  //           uint256(_assetValue)
+  //         );
+  //       }
 
-        // Unsupported asset type
-        else revert("Unknown asset type");
+  //       // Unsupported asset type
+  //       else revert("Unknown asset type");
 
-        // Delete game pot entry
-        delete g.pot[_i];
-      }
-    }
+  //       // Delete game pot entry
+  //       delete g.pot[_i];
+  //     }
+  //   }
 
-    // Fire `GameChanged` event
-    emit GameChanged(
-      g.number
-    );
-  }
+  //   // Fire `GameChanged` event
+  //   emit GameChanged(
+  //     g.number
+  //   );
+  // }
 
   /**
    * @dev Remove an ERC20 pot asset from a game
    */
-  function removeGamePotERC20Asset(
-    uint32 _gameNumber,
-    uint248 _assetAmount,
-    address _assetAddress
-  ) external {
-    Game storage g = games[_gameNumber];
+  // function removeGamePotERC20Asset(
+  //   uint32 _gameNumber,
+  //   uint248 _assetAmount,
+  //   address _assetAddress
+  // ) external {
+  //   Game storage g = games[_gameNumber];
 
-    require(
-      g.status == 1 && hasRole(CALLER_ROLE, msg.sender),
-      "Not authorised"
-    );
+  //   require(
+  //     g.status == 1 && hasRole(CALLER_ROLE, msg.sender),
+  //     "Not authorised"
+  //   );
 
-    _removeGamePotAsset(
-      _gameNumber,
-      0,
-      _assetAmount,
-      _assetAddress
-    );
-  }
+  //   _removeGamePotAsset(
+  //     _gameNumber,
+  //     0,
+  //     _assetAmount,
+  //     _assetAddress
+  //   );
+  // }
 
   /**
    * @dev Remove an ERC721 pot asset from a game
    */
-  function removeGamePotERC721Asset(
-    uint32 _gameNumber,
-    uint248 _assetIndex,
-    address _assetAddress
-  ) external {
-    Game storage g = games[_gameNumber];
+  // function removeGamePotERC721Asset(
+  //   uint32 _gameNumber,
+  //   uint248 _assetIndex,
+  //   address _assetAddress
+  // ) external {
+  //   Game storage g = games[_gameNumber];
 
-    require(
-      g.status == 1 && hasRole(CALLER_ROLE, msg.sender),
-      "Not authorised"
-    );
+  //   require(
+  //     g.status == 1 && hasRole(CALLER_ROLE, msg.sender),
+  //     "Not authorised"
+  //   );
 
-    _removeGamePotAsset(
-      _gameNumber,
-      1,
-      _assetIndex,
-      _assetAddress
-    );
-  }
+  //   _removeGamePotAsset(
+  //     _gameNumber,
+  //     1,
+  //     _assetIndex,
+  //     _assetAddress
+  //   );
+  // }
 
   /**
    * @dev Return `_total` active games (newest first)
