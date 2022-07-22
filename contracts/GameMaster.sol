@@ -689,8 +689,22 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
         );
       }
 
+      // ERC1155
+      else if (g.pot[_i].assetType == 2) {
+        IERC1155(
+          g.pot[_i].assetAddress
+        )
+        .safeTransferFrom(
+          address(this),
+          g.winnerAddress,
+          uint256(_pots[_i].value),
+          1,
+          ''
+        );
+      }
+
       // Unsupported asset type
-      else revert("Unknown asset type");
+      else revert("Unsupported asset type");
     }
 
     // Send game token pot to winner
@@ -717,7 +731,7 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
   function _addGamePotAsset(
     uint32 _gameNumber,
     uint8 _assetType,
-    uint248 _assetValue,
+    uint248 _assetValueOrAmount,
     address _assetAddress
   ) internal {
     Game storage g = games[_gameNumber];
@@ -739,7 +753,7 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
         _assetInterface,
         msg.sender,
         address(this),
-        uint256(_assetValue)
+        uint256(_assetValueOrAmount)
       );
     }
 
@@ -750,7 +764,7 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
       _assetInterface.safeTransferFrom(
         msg.sender,
         address(this),
-        uint256(_assetValue)
+        uint256(_assetValueOrAmount)
       );
     }
 
@@ -761,20 +775,20 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
       _assetInterface.safeTransferFrom(
         msg.sender,
         address(this),
-        uint256(_assetValue),
+        uint256(_assetValueOrAmount),
         1,
         ''
       );
     }
 
     // Unsupported asset type
-    else revert("Unknown asset type");
+    else revert("Unsupported asset type");
 
     // Create initial game token pot, as index zero
     g.pot[g.potCount] = GamePot(
 
-      // value
-      _assetValue,
+      // Asset value, or amount
+      _assetValueOrAmount,
 
       // assetType
       _assetType,
@@ -839,7 +853,7 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
    */
   function addGamePotERC1155Asset(
     uint32 _gameNumber,
-    uint248 _assetIndex,
+    uint248 _assetAmount,
     address _assetAddress
   ) external {
     require(
@@ -850,7 +864,7 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
     _addGamePotAsset(
       _gameNumber,
       2,
-      _assetIndex,
+      _assetAmount,
       _assetAddress
     );
   }
@@ -908,7 +922,7 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
   //       }
 
   //       // Unsupported asset type
-  //       else revert("Unknown asset type");
+  //       else revert("Unsupported asset type");
 
   //       // Delete game pot entry
   //       delete g.pot[_i];
