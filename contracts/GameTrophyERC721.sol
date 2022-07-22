@@ -10,10 +10,12 @@ contract GameTrophyERC721 is ERC721URIStorage {
 
     constructor() ERC721("GameTrophyERC721", "GT") {}
 
-    function awardItem(address player, string memory tokenURI)
-        public
-        returns (uint256)
-    {
+    function awardItem(
+        address player,
+        string memory tokenURI
+    ) public returns (
+        uint256
+    ) {
         uint256 newItemId = _tokenIds.current();
         _mint(player, newItemId);
         _setTokenURI(newItemId, tokenURI);

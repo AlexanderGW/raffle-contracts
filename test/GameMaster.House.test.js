@@ -12,6 +12,7 @@ const Oracle = artifacts.require('Oracle');
 const GameMaster = artifacts.require('GameMaster');
 const GameBobToken = artifacts.require('GameBobToken');
 const GameTrophyERC721 = artifacts.require('GameTrophyERC721');
+const GameTrophyERC1155 = artifacts.require('GameTrophyERC1155');
 
 // Start test block
 contract('GameMaster', function ([ creator, other ]) {
@@ -19,34 +20,43 @@ contract('GameMaster', function ([ creator, other ]) {
   let oracle;
   let contract;
   let token;
-  let nft;
+  let nftERC721;
+  let nftERC1155;
 
   before(async function () {
     accounts = await web3.eth.getAccounts();
     oracle = await Oracle.new({ from: creator });
     contract = await GameMaster.new(oracle.address, { from: creator });
     token = await GameBobToken.new(creator, { from: creator });
-    nft = await GameTrophyERC721.new({ from: creator });
+    nftERC721 = await GameTrophyERC721.new({ from: creator });
+    nftERC1155 = await GameTrophyERC1155.new({ from: creator });
     decimals = web3.utils.toBN(18);
   });
 
   it('should allow roled account to run house game', async function () {
     let expected, actual;
 
-    let nft0 = await nft.awardItem(
+    let nftERC721Asset0 = await nftERC721.awardItem(
       accounts[0],
-      'http://localhost:3200/nft0.jpg',
+      'http://localhost:3200/nftERC721Asset0.jpg',
       {from: accounts[0]}
     );
-    // console.log(nft0.logs[0].args.tokenId);
+    // console.log(nftERC721Asset0.logs[0].args.tokenId);
     // return;
 
-    let nft1 = await nft.awardItem(
+    let nftERC721Asset1 = await nftERC721.awardItem(
       accounts[0],
-      'http://localhost:3200/nft1.jpg',
+      'http://localhost:3200/nftERC721Asset1.jpg',
       {from: accounts[0]}
     );
-    // console.log(nft1.logs[0].args.tokenId);
+    // console.log(nftERC721Asset1.logs[0].args.tokenId);
+    // return;
+
+    let nftERC1155Asset0 = await nftERC1155.awardItem(
+      accounts[0],
+      {from: accounts[0]}
+    );
+    console.log(nftERC1155Asset0.logs[0].args.id.toNumber());
     // return;
 
     // Seed accounts and set approvals for testing
@@ -69,9 +79,22 @@ contract('GameMaster', function ([ creator, other ]) {
     await token.approve(contract.address, approveAmount100K, {from: accounts[3]});
     await token.approve(contract.address, approveAmount100K, {from: accounts[4]});
 
-    await nft.approve(contract.address, nft0.logs[0].args.tokenId, {from: accounts[0]});
-    await nft.approve(contract.address, nft1.logs[0].args.tokenId, {from: accounts[0]});
+    await nftERC721.approve(
+      contract.address,
+      nftERC721Asset0.logs[0].args.tokenId,
+      {from: accounts[0]}
+    );
 
+    await nftERC721.approve(
+      contract.address,
+      nftERC721Asset1.logs[0].args.tokenId,
+      {from: accounts[0]}
+    );
+
+    await nftERC1155.setApprovalForAll(
+      contract.address,
+      {from: accounts[0]}
+    );
 
 
     let maxPlayers = web3.utils.toBN('3');
@@ -149,10 +172,10 @@ contract('GameMaster', function ([ creator, other ]) {
       game0Log.gameNumber,
 
       // Asset value
-      nft0.logs[0].args.tokenId,
+      nftERC721Asset0.logs[0].args.tokenId,
 
       // Asset address
-      nft.address,
+      nftERC721.address,
 
       {from: accounts[0]}
     )
@@ -170,10 +193,10 @@ contract('GameMaster', function ([ creator, other ]) {
     //   game0Log.gameNumber,
 
     //   // Asset value
-    //   nft1.logs[0].args.tokenId,
+    //   nftERC721Asset1.logs[0].args.tokenId,
 
     //   // Asset address
-    //   nft.address,
+    //   nftERC721.address,
 
     //   {from: accounts[0]}
     // )
@@ -183,12 +206,12 @@ contract('GameMaster', function ([ creator, other ]) {
     // // return;
 
     // // Check NFT one is owned by contract
-    // let nft1OwnerAfterAdding = await nft.ownerOf.call(
-    //   nft1.logs[0].args.tokenId,
+    // let nftERC721Asset1OwnerAfterAdding = await nftERC721.ownerOf.call(
+    //   nftERC721Asset1.logs[0].args.tokenId,
     //   {from: accounts[0]}
     // );
-    // // console.log(nft1OwnerAfterAdding);
-    // expect(nft1OwnerAfterAdding).to.be.bignumber.equal(contract.address);
+    // // console.log(nftERC721Asset1OwnerAfterAdding);
+    // expect(nftERC721Asset1OwnerAfterAdding).to.be.bignumber.equal(contract.address);
 
     // // Remove NFT one from game, back to A0
     // let game0AddPotAsset2Remove = await contract.removeGamePotERC721Asset(
@@ -197,21 +220,21 @@ contract('GameMaster', function ([ creator, other ]) {
     //   game0Log.gameNumber,
 
     //   // Asset value
-    //   nft1.logs[0].args.tokenId,
+    //   nftERC721Asset1.logs[0].args.tokenId,
 
     //   // Asset address
-    //   nft.address,
+    //   nftERC721.address,
 
     //   {from: accounts[0]}
     // )
 
     // // Check NFT one is back to A0 owner
-    // let nft1OwnerAfterRemoval = await nft.ownerOf.call(
-    //   nft1.logs[0].args.tokenId,
+    // let nftERC721Asset1OwnerAfterRemoval = await nftERC721.ownerOf.call(
+    //   nftERC721Asset1.logs[0].args.tokenId,
     //   {from: accounts[0]}
     // );
-    // // console.log(nft0Owner);
-    // expect(nft1OwnerAfterRemoval).to.be.bignumber.equal(accounts[0]);
+    // // console.log(nftERC721Asset0Owner);
+    // expect(nftERC721Asset1OwnerAfterRemoval).to.be.bignumber.equal(accounts[0]);
 
 
     // // Check game zero pot states - for removal of game pot asset
@@ -224,6 +247,26 @@ contract('GameMaster', function ([ creator, other ]) {
     // expect(game0State.pot[3].assetAddress).to.eql('0x0000000000000000000000000000000000000000');
     // // console.log(game0State.pot);
     // // return;
+
+
+    // Add ERC1155 (NFT) game pot asset
+    let game0AddPotAssetERC1155 = await contract.addGamePotERC1155Asset(
+
+      // Game number
+      game0Log.gameNumber,
+
+      // Asset value
+      nftERC1155Asset0.logs[0].args.id,
+
+      // Asset address
+      nftERC1155.address,
+
+      {from: accounts[0]}
+    )
+
+    // let game0AddPotAssetERC1155Log = game0AddPotAssetERC1155.logs[0].args;
+    // console.log(game0AddPotAssetERC1155Log);
+    // return;
 
 
 
@@ -359,9 +402,13 @@ contract('GameMaster', function ([ creator, other ]) {
     expect(game0EndGameLog.pot[1].assetType).to.be.bignumber.equal('0');
     expect(game0EndGameLog.pot[1].assetAddress).to.eql(token.address);
 
-    expect(game0EndGameLog.pot[2].value).to.be.bignumber.equal(nft0.logs[0].args.tokenId);
+    expect(game0EndGameLog.pot[2].value).to.be.bignumber.equal(nftERC721Asset0.logs[0].args.tokenId);
     expect(game0EndGameLog.pot[2].assetType).to.be.bignumber.equal('1');
-    expect(game0EndGameLog.pot[2].assetAddress).to.eql(nft.address);
+    expect(game0EndGameLog.pot[2].assetAddress).to.eql(nftERC721.address);
+
+    expect(game0EndGameLog.pot[3].value).to.be.bignumber.equal(nftERC1155Asset0.logs[0].args.id);
+    expect(game0EndGameLog.pot[3].assetType).to.be.bignumber.equal('2');
+    expect(game0EndGameLog.pot[3].assetAddress).to.eql(nftERC1155.address);
 
     // Number of games ended increases by one
     expected = web3.utils.toBN('1');
@@ -369,12 +416,12 @@ contract('GameMaster', function ([ creator, other ]) {
     expect(actual).to.be.bignumber.equal(expected);
 
     // Check winner is owner of pot two NFT
-    let nft0Owner = await nft.ownerOf.call(
-      nft0.logs[0].args.tokenId,
+    let nftERC721Asset0Owner = await nftERC721.ownerOf.call(
+      nftERC721Asset0.logs[0].args.tokenId,
       {from: accounts[0]}
     );
-    // console.log(nft0Owner);
-    expect(nft0Owner).to.be.bignumber.equal(game0EndGameLog.winnerAddress);
+    // console.log(nftERC721Asset0Owner);
+    expect(nftERC721Asset0Owner).to.be.bignumber.equal(game0EndGameLog.winnerAddress);
 
     // Check winner token balance from pot zero and one
     let game0WinnerBalance = await token.balanceOf.call(game0EndGameLog.winnerAddress, {from: accounts[0]});
@@ -420,9 +467,9 @@ contract('GameMaster', function ([ creator, other ]) {
     expect(game0State.pot[1].assetType).to.be.bignumber.equal('0');
     expect(game0State.pot[1].assetAddress).to.eql(token.address);
 
-    expect(game0State.pot[2].value).to.be.bignumber.equal(nft0.logs[0].args.tokenId);
+    expect(game0State.pot[2].value).to.be.bignumber.equal(nftERC721Asset0.logs[0].args.tokenId);
     expect(game0State.pot[2].assetType).to.be.bignumber.equal('1');
-    expect(game0State.pot[2].assetAddress).to.eql(nft.address);
+    expect(game0State.pot[2].assetAddress).to.eql(nftERC721.address);
 
     // Check all game zero player states
     let game0PlayerState = [];
