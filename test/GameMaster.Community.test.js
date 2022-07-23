@@ -11,7 +11,6 @@ const { BN, expectEvent, expectRevert, constants } = require('@openzeppelin/test
 const Oracle = artifacts.require('Oracle');
 const GameMaster = artifacts.require('GameMaster');
 const GameBobToken = artifacts.require('GameBobToken');
-const GameTrophyERC721 = artifacts.require('GameTrophyERC721');
 
 // Start test block
 contract('GameMaster', function ([ creator, other ]) {
@@ -19,14 +18,13 @@ contract('GameMaster', function ([ creator, other ]) {
   let oracle;
   let contract;
   let token;
-  let nft;
+  let decimals;
 
   before(async function () {
     accounts = await web3.eth.getAccounts();
     oracle = await Oracle.new({ from: creator });
     contract = await GameMaster.new(oracle.address, { from: creator });
     token = await GameBobToken.new(creator, { from: creator });
-    nft = await GameTrophyERC721.new({ from: creator });
     decimals = web3.utils.toBN(18);
   });
 
@@ -100,6 +98,26 @@ contract('GameMaster', function ([ creator, other ]) {
     let gameStartCommunityGameLog = gameStartCommunityGame.logs[0].args;
     // console.log(gameStartCommunityGameLog);
 
+    // Add additional game pot ERC20 asset
+    let game0Pot1AssetValue = 5;
+    let game0AddPotAsset0 = await contract.addGamePotERC20Asset(
+
+      // Game number
+      gameStartCommunityGameLog.gameNumber,
+
+      // Asset value
+      web3.utils.toBN(game0Pot1AssetValue).mul(web3.utils.toBN(10).pow(decimals)),
+
+      // Asset address
+      token.address,
+
+      {from: accounts[1]}
+    )
+
+    let game0AddPotAsset0Log = game0AddPotAsset0.logs[0].args;
+    // console.log(game0AddPotAsset0Log);
+    // return;
+
     // Another game test run, buying two tickets each
     await contract.buyTicket(
       
@@ -148,6 +166,33 @@ contract('GameMaster', function ([ creator, other ]) {
     
     // }
 
+    // Check game zero states
+    game0State = await contract.getGameState.call(
+      gameStartCommunityGameLog.gameNumber,
+      {from: accounts[1]}
+    );
+
+    expect(game0State.status).to.be.bignumber.equal('2');
+    
+    expect(game0State.playerCount).to.be.bignumber.equal(web3.utils.toBN('3'));
+    // Each player bought one ticket each
+    expect(game0State.ticketCount).to.be.bignumber.equal(web3.utils.toBN('3'));
+    expect(game0State.maxPlayers).to.be.bignumber.equal(maxPlayers);
+    expect(game0State.maxTicketsPlayer).to.be.bignumber.equal(maxTicketsPlayer);
+    expect(game0State.ticketPrice).to.be.bignumber.equal(ticketPrice);
+    expect(game0State.feeAddress).to.be.bignumber.equal(gameFeeAddress);
+
+    expect(game0State.pot[0].value).to.be.bignumber.equal(web3.utils.toBN((ticketPrice * numberOfTickets) * 3));
+    expect(game0State.pot[0].assetType).to.be.bignumber.equal('0');
+    expect(game0State.pot[0].assetAddress).to.eql(token.address);
+
+    expect(game0State.pot[1].value).to.be.bignumber.equal(web3.utils.toBN(game0Pot1AssetValue).mul(web3.utils.toBN(10).pow(decimals)));
+    expect(game0State.pot[1].assetType).to.be.bignumber.equal('0');
+    expect(game0State.pot[1].assetAddress).to.eql(token.address);
+
+    // console.log(game0State);
+
+
     // End community game, from a `MANAGER_ROLE` account
     let gameEndCommunityGameAsManagerCall = await contract.endGame.call(
       gameStartCommunityGameLog.gameNumber,
@@ -166,6 +211,7 @@ contract('GameMaster', function ([ creator, other ]) {
     // treasuryfee = 5% (default) = 0.15 @ msg.sender (default)
     // game fee =  50% = 1.425 @ A[6]
     // winner = 1.425
+    // pot one = 5
 
     let gameEndCommunityGameLog = gameEndCommunityGame.logs[0].args;
     // console.log(gameEndCommunityGameLog);
@@ -181,7 +227,7 @@ contract('GameMaster', function ([ creator, other ]) {
     let winnerBalance = await token.balanceOf.call(gameEndCommunityGameLog.winnerAddress, {from: accounts[2]});
     // console.log('winnerBalance: ' + winnerBalance.toString());
     
-    // Initial seed amount of 10k, plus original ticket cost of 1, plus the 0.35 offset
-    expect(winnerBalance).to.eql(web3.utils.toBN('10000425000000000000000'));
+    // Initial seed amount of 10k, plus original ticket cost of 1, plus the 0.35 offset, plus game pot one of 5
+    expect(winnerBalance.toString()).to.eql('10005425000000000000000');
   });
 });
