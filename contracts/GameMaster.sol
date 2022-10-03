@@ -731,8 +731,10 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
   function _addGamePotAsset(
     uint32 _gameNumber,
     uint8 _assetType,
-    uint248 _assetValueOrAmount,
-    address _assetAddress
+    address _assetAddress,
+    uint256 _assetAmountOrId,
+    uint256 _assetERC1155Amount,
+    bytes memory _data
   ) internal {
     Game storage g = games[_gameNumber];
 
@@ -753,7 +755,9 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
         _assetInterface,
         msg.sender,
         address(this),
-        uint256(_assetValueOrAmount)
+
+        // Amount
+        _assetAmountOrId
       );
     }
 
@@ -764,7 +768,9 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
       _assetInterface.safeTransferFrom(
         msg.sender,
         address(this),
-        uint256(_assetValueOrAmount)
+
+        // Token ID
+        _assetAmountOrId
       );
     }
 
@@ -775,9 +781,15 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
       _assetInterface.safeTransferFrom(
         msg.sender,
         address(this),
-        uint256(_assetValueOrAmount),
-        1,
-        ''
+
+        // Token ID
+        _assetAmountOrId,
+
+        // Amount
+        _assetERC1155Amount,
+
+        // Data
+        _data
       );
     }
 
@@ -788,7 +800,7 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
     g.pot[g.potCount] = GamePot(
 
       // Asset value, or amount
-      _assetValueOrAmount,
+      uint248(_assetAmountOrId),
 
       // assetType
       _assetType,
@@ -811,8 +823,8 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
    */
   function addGamePotERC20Asset(
     uint32 _gameNumber,
-    uint248 _assetAmount,
-    address _assetAddress
+    address _assetAddress,
+    uint256 _assetAmount
   ) external {
     require(
       isAuthorised(_gameNumber),
@@ -822,8 +834,10 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
     _addGamePotAsset(
       _gameNumber,
       0,
+      _assetAddress,
       _assetAmount,
-      _assetAddress
+      0,
+      ''
     );
   }
 
@@ -832,8 +846,8 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
    */
   function addGamePotERC721Asset(
     uint32 _gameNumber,
-    uint248 _assetIndex,
-    address _assetAddress
+    address _assetAddress,
+    uint256 _assetTokenId
   ) external {
     require(
       isAuthorised(_gameNumber),
@@ -843,8 +857,10 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
     _addGamePotAsset(
       _gameNumber,
       1,
-      _assetIndex,
-      _assetAddress
+      _assetAddress,
+      _assetTokenId,
+      0,
+      ''
     );
   }
 
@@ -853,8 +869,10 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
    */
   function addGamePotERC1155Asset(
     uint32 _gameNumber,
-    uint248 _assetAmount,
-    address _assetAddress
+    address _assetAddress,
+    uint256 _assetId,
+    uint256 _assetAmount,
+    bytes memory _assetData
   ) external {
     require(
       isAuthorised(_gameNumber),
@@ -864,8 +882,10 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
     _addGamePotAsset(
       _gameNumber,
       2,
+      _assetAddress,
+      _assetId,
       _assetAmount,
-      _assetAddress
+      _assetData
     );
   }
 

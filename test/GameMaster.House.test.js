@@ -56,7 +56,7 @@ contract('GameMaster', function ([ creator, other ]) {
       accounts[0],
       {from: accounts[0]}
     );
-    console.log(nftERC1155Asset0.logs[0].args.id.toNumber());
+    // console.log(nftERC1155Asset0.logs[0].args.id.toNumber());
     // return;
 
     // Seed accounts and set approvals for testing
@@ -146,11 +146,11 @@ contract('GameMaster', function ([ creator, other ]) {
       // Game number
       game0Log.gameNumber,
 
-      // Asset value
-      web3.utils.toBN(game0Pot1AssetValue).mul(web3.utils.toBN(10).pow(decimals)),
-
       // Asset address
       token.address,
+
+      // Asset value
+      web3.utils.toBN(game0Pot1AssetValue).mul(web3.utils.toBN(10).pow(decimals)),
 
       {from: accounts[0]}
     )
@@ -171,11 +171,11 @@ contract('GameMaster', function ([ creator, other ]) {
       // Game number
       game0Log.gameNumber,
 
-      // Asset value
-      nftERC721Asset0.logs[0].args.tokenId,
-
       // Asset address
       nftERC721.address,
+
+      // Asset value
+      nftERC721Asset0.logs[0].args.tokenId,
 
       {from: accounts[0]}
     )
@@ -255,11 +255,17 @@ contract('GameMaster', function ([ creator, other ]) {
       // Game number
       game0Log.gameNumber,
 
-      // Asset value
-      nftERC1155Asset0.logs[0].args.id,
-
       // Asset address
       nftERC1155.address,
+
+      // Asset ID
+      nftERC1155Asset0.logs[0].args.id,
+
+      // Asset amount
+      web3.utils.toBN('1'),
+
+      // Asset data
+      '0x0',
 
       {from: accounts[0]}
     )

@@ -105,11 +105,11 @@ contract('GameMaster', function ([ creator, other ]) {
       // Game number
       gameStartCommunityGameLog.gameNumber,
 
-      // Asset value
-      web3.utils.toBN(game0Pot1AssetValue).mul(web3.utils.toBN(10).pow(decimals)),
-
       // Asset address
       token.address,
+
+      // Asset value
+      web3.utils.toBN(game0Pot1AssetValue).mul(web3.utils.toBN(10).pow(decimals)),
 
       {from: accounts[1]}
     )
