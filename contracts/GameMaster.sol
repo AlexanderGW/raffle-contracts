@@ -24,9 +24,14 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
   struct GamePot {
 
     /**
-     * @dev Value of the asset (token amount, ERC721 collection index)
+     * @dev Value of the asset (ERC20 token amount, or ERC721+ collection index)
      */
-    uint248 value;
+    uint128 erc20AmountOrId;
+
+    /**
+     * @dev Value of the asset (ERC1155)
+     */
+    uint120 erc1155Amount;
 
     /**
      * @dev Type of asset
@@ -39,6 +44,11 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
      * @dev Address of the asset
      */
     address assetAddress;
+
+    /**
+     * @dev Data of the asset
+     */
+    bytes assetData;
   }
 
   /**
@@ -370,14 +380,19 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
     // Create initial game token pot, as index zero
     g.pot[0] = GamePot(
 
-      // value
+      // ERC-20 asset amount, or ERC-721+ ID
+      0,
+
+      // ERC1155 amount
       0,
 
       // assetType
       0,
 
       // assetAddress
-      _gameTokenAddress
+      _gameTokenAddress,
+
+      ''
     );
 
     // Fire `GameStarted` event
@@ -509,7 +524,7 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
     );
 
     // Add total ticket cost to game ticket pot (always index zero)
-    g.pot[0].value += uint128(_totalCost);
+    g.pot[0].erc20AmountOrId += uint128(_totalCost);
 
     // If a new player (currently has no tickets)
     if (_isNewPlayer) {
@@ -605,7 +620,7 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
     IERC20 _token = IERC20(g.pot[0].assetAddress);
 
     // Check contract holds enough balance in game token (pot zero), to send to winner
-    uint256 _ticketPot = g.pot[0].value;
+    uint256 _ticketPot = g.pot[0].erc20AmountOrId;
     uint256 _balance = _token.balanceOf(address(this));
     require(
       _ticketPot <= _balance,
@@ -673,7 +688,7 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
         )
         .transfer(
           g.winnerAddress,
-          uint256(_pots[_i].value)
+          uint256(_pots[_i].erc20AmountOrId)
         );
       }
 
@@ -685,7 +700,7 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
         .safeTransferFrom(
           address(this),
           g.winnerAddress,
-          uint256(_pots[_i].value)
+          uint256(_pots[_i].erc20AmountOrId)
         );
       }
 
@@ -697,9 +712,9 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
         .safeTransferFrom(
           address(this),
           g.winnerAddress,
-          uint256(_pots[_i].value),
-          1,
-          ''
+          uint256(_pots[_i].erc20AmountOrId),
+          uint256(_pots[_i].erc1155Amount),
+          _pots[_i].assetData
         );
       }
 
@@ -732,8 +747,8 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
     uint32 _gameNumber,
     uint8 _assetType,
     address _assetAddress,
-    uint256 _assetAmountOrId,
-    uint256 _assetERC1155Amount,
+    uint128 _assetERC20AmountOrId,
+    uint120 _assetERC1155Amount,
     bytes memory _data
   ) internal {
     Game storage g = games[_gameNumber];
@@ -757,7 +772,7 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
         address(this),
 
         // Amount
-        _assetAmountOrId
+        _assetERC20AmountOrId
       );
     }
 
@@ -770,7 +785,7 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
         address(this),
 
         // Token ID
-        _assetAmountOrId
+        _assetERC20AmountOrId
       );
     }
 
@@ -783,12 +798,12 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
         address(this),
 
         // Token ID
-        _assetAmountOrId,
+        _assetERC20AmountOrId,
 
         // Amount
         _assetERC1155Amount,
 
-        // Data
+        // Asset data
         _data
       );
     }
@@ -799,14 +814,20 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
     // Create initial game token pot, as index zero
     g.pot[g.potCount] = GamePot(
 
-      // Asset value, or amount
-      uint248(_assetAmountOrId),
+      // ERC-20 asset amount, or ERC-721+ ID
+      _assetERC20AmountOrId,
+
+      // ERC1155 amount
+      _assetERC1155Amount,
 
       // assetType
       _assetType,
 
       // assetAddress
-      _assetAddress
+      _assetAddress,
+
+      // Asset data
+      _data
     );
 
     // Increase total number of pot assets for the game
@@ -824,7 +845,7 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
   function addGamePotERC20Asset(
     uint32 _gameNumber,
     address _assetAddress,
-    uint256 _assetAmount
+    uint128 _assetAmount
   ) external {
     require(
       isAuthorised(_gameNumber),
@@ -837,7 +858,7 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
       _assetAddress,
       _assetAmount,
       0,
-      ''
+      '0x0'
     );
   }
 
@@ -847,7 +868,7 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
   function addGamePotERC721Asset(
     uint32 _gameNumber,
     address _assetAddress,
-    uint256 _assetTokenId
+    uint128 _assetTokenId
   ) external {
     require(
       isAuthorised(_gameNumber),
@@ -860,7 +881,7 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
       _assetAddress,
       _assetTokenId,
       0,
-      ''
+      '0x0'
     );
   }
 
@@ -870,8 +891,8 @@ contract GameMaster is AccessControl, ERC721Holder, ERC1155Holder {
   function addGamePotERC1155Asset(
     uint32 _gameNumber,
     address _assetAddress,
-    uint256 _assetId,
-    uint256 _assetAmount,
+    uint128 _assetId,
+    uint120 _assetAmount,
     bytes memory _assetData
   ) external {
     require(

@@ -250,6 +250,8 @@ contract('GameMaster', function ([ creator, other ]) {
 
 
     // Add ERC1155 (NFT) game pot asset
+    let game0AddPotAssetERC1155_ERC1155Amount = web3.utils.toBN('1');
+    let game0AddPotAssetERC1155_assetData = '0xf00ba5';
     let game0AddPotAssetERC1155 = await contract.addGamePotERC1155Asset(
 
       // Game number
@@ -262,10 +264,10 @@ contract('GameMaster', function ([ creator, other ]) {
       nftERC1155Asset0.logs[0].args.id,
 
       // Asset amount
-      web3.utils.toBN('1'),
+      game0AddPotAssetERC1155_ERC1155Amount,
 
       // Asset data
-      '0x0',
+      game0AddPotAssetERC1155_assetData,
 
       {from: accounts[0]}
     )
@@ -400,21 +402,24 @@ contract('GameMaster', function ([ creator, other ]) {
     // expect(game0EndGameLog.winnerAddress).to.eql(accounts[1]);
     expect(game0EndGameLog.gameNumber).to.be.bignumber.equal('0');
 
-    expect(game0EndGameLog.pot[0].value).to.be.bignumber.equal(web3.utils.toBN((ticketPrice * numberOfTickets) * 3));
+    expect(game0EndGameLog.pot[0].erc20AmountOrId).to.be.bignumber.equal(web3.utils.toBN((ticketPrice * numberOfTickets) * 3));
     expect(game0EndGameLog.pot[0].assetType).to.be.bignumber.equal('0');
     expect(game0EndGameLog.pot[0].assetAddress).to.eql(token.address);
 
-    expect(game0EndGameLog.pot[1].value).to.be.bignumber.equal(web3.utils.toBN(game0Pot1AssetValue).mul(web3.utils.toBN(10).pow(decimals)));
+    expect(game0EndGameLog.pot[1].erc20AmountOrId).to.be.bignumber.equal(web3.utils.toBN(game0Pot1AssetValue).mul(web3.utils.toBN(10).pow(decimals)));
     expect(game0EndGameLog.pot[1].assetType).to.be.bignumber.equal('0');
     expect(game0EndGameLog.pot[1].assetAddress).to.eql(token.address);
 
-    expect(game0EndGameLog.pot[2].value).to.be.bignumber.equal(nftERC721Asset0.logs[0].args.tokenId);
+    expect(game0EndGameLog.pot[2].erc20AmountOrId).to.be.bignumber.equal(nftERC721Asset0.logs[0].args.tokenId);
     expect(game0EndGameLog.pot[2].assetType).to.be.bignumber.equal('1');
     expect(game0EndGameLog.pot[2].assetAddress).to.eql(nftERC721.address);
+    // expect(game0EndGameLog.pot[2].erc1155Amount).to.eql(nftERC721Asset0.logs[0].args.tokenId);
 
-    expect(game0EndGameLog.pot[3].value).to.be.bignumber.equal(nftERC1155Asset0.logs[0].args.id);
+    expect(game0EndGameLog.pot[3].erc20AmountOrId).to.be.bignumber.equal(nftERC1155Asset0.logs[0].args.id);
     expect(game0EndGameLog.pot[3].assetType).to.be.bignumber.equal('2');
     expect(game0EndGameLog.pot[3].assetAddress).to.eql(nftERC1155.address);
+    // expect(game0EndGameLog.pot[3].erc1155Amount).to.eql(nftERC1155Asset0.logs[0].args.id);
+    // expect(game0EndGameLog.pot[3].assetData).to.eql(game0AddPotAssetERC1155_assetData);
 
     // Number of games ended increases by one
     expected = web3.utils.toBN('1');
@@ -465,15 +470,15 @@ contract('GameMaster', function ([ creator, other ]) {
     expect(game0State.ticketPrice).to.be.bignumber.equal(ticketPrice);
     expect(game0State.feeAddress).to.be.bignumber.equal(gameFeeAddress);
 
-    expect(game0State.pot[0].value).to.be.bignumber.equal(web3.utils.toBN((ticketPrice * numberOfTickets) * 3));
+    expect(game0State.pot[0].erc20AmountOrId).to.be.bignumber.equal(web3.utils.toBN((ticketPrice * numberOfTickets) * 3));
     expect(game0State.pot[0].assetType).to.be.bignumber.equal('0');
     expect(game0State.pot[0].assetAddress).to.eql(token.address);
 
-    expect(game0State.pot[1].value).to.be.bignumber.equal(web3.utils.toBN(game0Pot1AssetValue).mul(web3.utils.toBN(10).pow(decimals)));
+    expect(game0State.pot[1].erc20AmountOrId).to.be.bignumber.equal(web3.utils.toBN(game0Pot1AssetValue).mul(web3.utils.toBN(10).pow(decimals)));
     expect(game0State.pot[1].assetType).to.be.bignumber.equal('0');
     expect(game0State.pot[1].assetAddress).to.eql(token.address);
 
-    expect(game0State.pot[2].value).to.be.bignumber.equal(nftERC721Asset0.logs[0].args.tokenId);
+    expect(game0State.pot[2].erc20AmountOrId).to.be.bignumber.equal(nftERC721Asset0.logs[0].args.tokenId);
     expect(game0State.pot[2].assetType).to.be.bignumber.equal('1');
     expect(game0State.pot[2].assetAddress).to.eql(nftERC721.address);
 

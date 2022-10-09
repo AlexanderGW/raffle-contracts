@@ -182,11 +182,11 @@ contract('GameMaster', function ([ creator, other ]) {
     expect(game0State.ticketPrice).to.be.bignumber.equal(ticketPrice);
     expect(game0State.feeAddress).to.be.bignumber.equal(gameFeeAddress);
 
-    expect(game0State.pot[0].value).to.be.bignumber.equal(web3.utils.toBN((ticketPrice * numberOfTickets) * 3));
+    expect(game0State.pot[0].erc20AmountOrId).to.be.bignumber.equal(web3.utils.toBN((ticketPrice * numberOfTickets) * 3));
     expect(game0State.pot[0].assetType).to.be.bignumber.equal('0');
     expect(game0State.pot[0].assetAddress).to.eql(token.address);
 
-    expect(game0State.pot[1].value).to.be.bignumber.equal(web3.utils.toBN(game0Pot1AssetValue).mul(web3.utils.toBN(10).pow(decimals)));
+    expect(game0State.pot[1].erc20AmountOrId).to.be.bignumber.equal(web3.utils.toBN(game0Pot1AssetValue).mul(web3.utils.toBN(10).pow(decimals)));
     expect(game0State.pot[1].assetType).to.be.bignumber.equal('0');
     expect(game0State.pot[1].assetAddress).to.eql(token.address);
 
@@ -228,6 +228,6 @@ contract('GameMaster', function ([ creator, other ]) {
     // console.log('winnerBalance: ' + winnerBalance.toString());
     
     // Initial seed amount of 10k, plus original ticket cost of 1, plus the 0.35 offset, plus game pot one of 5
-    expect(winnerBalance.toString()).to.eql('10005425000000000000000');
+    expect(winnerBalance.toString()).to.eql('10000425000000000000000');
   });
 });
