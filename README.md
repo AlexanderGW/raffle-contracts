@@ -6,7 +6,7 @@
 # How does it work?
 ### Allows the running of lottery games with `startGame()`, where players acquire tickets with `gameToken` (ERC20), at `gameTicketPrice`, with a total of `gameMaxPlayers`, playing up to `gameMaxTicketsPlayer` each. Players can `buyTicket()` at `_numberOfTickets`.
 
-### Player's `gameToken` are transfered to the contract, the winner receives the total `_pot` of all player `gameToken` on contract, and any additional game pots defined with `addGamePotERC20Asset()` or `addGamePotERC721Asset()`, in `endGame()`. Minus `gameFeePercent` (hundredth) fee to `gameFeeAddress`.
+### Player's `gameToken` are transfered to the contract, the winner receives the total `_pot` of all player `gameToken` on contract, and any additional game pots defined with `addGamePotERC20Asset()`, `addGamePotERC721Asset()` or `addGamePotERC1155Asset()`, in `endGame()`. Minus `gameFeePercent` (hundredth) fee to `gameFeeAddress`.
 
 
 ## Requirements
