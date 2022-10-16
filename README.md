@@ -8,6 +8,9 @@
 
 ### Player's `gameToken` are transfered to the contract, the winner receives the total `_pot` of all player `gameToken` on contract, and any additional game pots defined with `addGamePotERC20Asset()`, `addGamePotERC721Asset()` or `addGamePotERC1155Asset()`, in `endGame()`. Minus `gameFeePercent` (hundredth) fee to `gameFeeAddress`.
 
+#### Caveat
+Ideally needs a keeper bot to make frequent irregular calls of `Oracle.feedRandomness(uint256)`, to make it difficult to determine game outcomes.
+
 
 ## Requirements
 ### Tools
